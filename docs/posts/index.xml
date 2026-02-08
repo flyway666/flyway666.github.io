@@ -1,0 +1,138 @@
+<rss xmlns:atom="http://www.w3.org/2005/Atom" version="2.0">
+    <channel>
+        <title>所有文章 - jim</title>
+        <link>http://localhost:1313/posts/</link>
+        <description>所有文章 | jim</description>
+        <generator>Hugo -- gohugo.io</generator><language>zh-CN</language><copyright>This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.</copyright><lastBuildDate>Sun, 08 Feb 2026 12:18:39 &#43;0800</lastBuildDate><atom:link href="http://localhost:1313/posts/" rel="self" type="application/rss+xml" /><item>
+    <title>PG_DBA_运维手册</title>
+    <link>http://localhost:1313/pg_dba/</link>
+    <pubDate>Sun, 08 Feb 2026 12:18:39 &#43;0800</pubDate>
+    <author>jim</author>
+    <guid>http://localhost:1313/pg_dba/</guid>
+    <description><![CDATA[<h1 id="pg_dba_运维手册">PG_DBA_运维手册</h1>
+<h3 id="查看database的owner">查看database的owner</h3>
+<div class="code-block code-line-numbers open" style="counter-reset: code-block 0">
+    <div class="code-header language-">
+        <span class="code-title"><i class="arrow fas fa-angle-right fa-fw" aria-hidden="true"></i></span>
+        <span class="ellipses"><i class="fas fa-ellipsis-h fa-fw" aria-hidden="true"></i></span>
+        <span class="copy" title="复制到剪贴板"><i class="far fa-copy fa-fw" aria-hidden="true"></i></span>
+    </div><pre tabindex="0"><code>select datname, usename as owner from pg_database left join pg_user on usesysid = datdba;</code></pre></div>
+<h3 id="查看可见schema">查看可见SCHEMA</h3>
+<div class="code-block code-line-numbers open" style="counter-reset: code-block 0">
+    <div class="code-header language-">
+        <span class="code-title"><i class="arrow fas fa-angle-right fa-fw" aria-hidden="true"></i></span>
+        <span class="ellipses"><i class="fas fa-ellipsis-h fa-fw" aria-hidden="true"></i></span>
+        <span class="copy" title="复制到剪贴板"><i class="far fa-copy fa-fw" aria-hidden="true"></i></span>
+    </div><pre tabindex="0"><code>select * from information_schema.schemata;</code></pre></div>
+<h3 id="查看表膨胀对所有表进行膨胀率排序取前10个">查看表膨胀（对所有表进行膨胀率排序），取前10个</h3>
+<div class="code-block code-line-numbers open" style="counter-reset: code-block 0">
+    <div class="code-header language-">
+        <span class="code-title"><i class="arrow fas fa-angle-right fa-fw" aria-hidden="true"></i></span>
+        <span class="ellipses"><i class="fas fa-ellipsis-h fa-fw" aria-hidden="true"></i></span>
+        <span class="copy" title="复制到剪贴板"><i class="far fa-copy fa-fw" aria-hidden="true"></i></span>
+    </div><pre tabindex="0"><code>SELECT
+    schemaname||&#39;.&#39;||relname as table_name,
+    pg_size_pretty(pg_relation_size(schemaname||&#39;.&#39;||relname)) as table_size,
+    n_dead_tup,
+    n_live_tup,
+    round(n_dead_tup * 100 / (n_live_tup + n_dead_tup),2) AS dead_tup_ratio
+FROM
+    pg_stat_all_tables
+WHERE
+    n_dead_tup &gt;= 1000
+and		schemaname in (&#39;base&#39;,&#39;workspace&#39;,&#39;permission&#39;,&#39;process&#39;,&#39;form&#39;,&#39;pipeline&#39;)    
+ORDER BY dead_tup_ratio DESC
+LIMIT 10;</code></pre></div>
+<h3 id="表膨胀处理">表膨胀处理</h3>
+<div class="code-block code-line-numbers open" style="counter-reset: code-block 0">
+    <div class="code-header language-">
+        <span class="code-title"><i class="arrow fas fa-angle-right fa-fw" aria-hidden="true"></i></span>
+        <span class="ellipses"><i class="fas fa-ellipsis-h fa-fw" aria-hidden="true"></i></span>
+        <span class="copy" title="复制到剪贴板"><i class="far fa-copy fa-fw" aria-hidden="true"></i></span>
+    </div><pre tabindex="0"><code>VACUUM (VERBOSE, ANALYZE)  表明，不锁表，不影响业务使用
+
+VACUUM ( FULL,VERBOSE ) 表名称 ，注意会锁表，连查询都不可以</code></pre></div>
+<h3 id="设置序列catche-1-无缓存每个进程取值就连续了">设置序列catche 1 (无缓存,每个进程取值就连续了)</h3>
+<div class="code-block code-line-numbers open" style="counter-reset: code-block 0">
+    <div class="code-header language-">
+        <span class="code-title"><i class="arrow fas fa-angle-right fa-fw" aria-hidden="true"></i></span>
+        <span class="ellipses"><i class="fas fa-ellipsis-h fa-fw" aria-hidden="true"></i></span>
+        <span class="copy" title="复制到剪贴板"><i class="far fa-copy fa-fw" aria-hidden="true"></i></span>
+    </div><pre tabindex="0"><code>select   &#39;alter sequence &#39;|| sequence_name|| &#39; cache 1 ;&#39;
+ from information_schema.sequences where sequence_schema != &#39;public&#39;</code></pre></div>
+<h1 id="查看性能sql">查看性能sql</h1>
+<h3 id="查看正在执行的sql长事务top-sql">查看正在执行的sql,长事务（top sql）</h3>
+<div class="code-block code-line-numbers open" style="counter-reset: code-block 0">
+    <div class="code-header language-">
+        <span class="code-title"><i class="arrow fas fa-angle-right fa-fw" aria-hidden="true"></i></span>
+        <span class="ellipses"><i class="fas fa-ellipsis-h fa-fw" aria-hidden="true"></i></span>
+        <span class="copy" title="复制到剪贴板"><i class="far fa-copy fa-fw" aria-hidden="true"></i></span>
+    </div><pre tabindex="0"><code>select datname,
+       usename,
+       client_addr,
+       application_name,
+       state,
+       backend_start,
+       xact_start,
+       xact_stay,
+       query_start,
+       query_stay,
+	   now() - query_start AS Duration, 
+       replace(query, chr(10), &#39; &#39;) as query
+from
+  (select pgsa.datname as datname,
+          pgsa.usename as usename,
+          pgsa.client_addr client_addr,
+          pgsa.application_name as application_name,
+          pgsa.state as state,
+          pgsa.backend_start as backend_start,
+          pgsa.xact_start as xact_start,
+          extract(epoch
+                  from (now() - pgsa.xact_start)) as xact_stay,
+          pgsa.query_start as query_start,
+          extract(epoch
+                  from (now() - pgsa.query_start)) as query_stay,
+          pgsa.query as query
+   from pg_stat_activity as pgsa
+   where pgsa.state != &#39;idle&#39;
+     and pgsa.state != &#39;idle in transaction&#39;
+     and pgsa.state != &#39;idle in transaction (aborted)&#39;
+	 and usename=&#39;datalink&#39;
+	--and (now() - query_start) &gt; interval &#39;10 seconds&#39;
+	 ) idleconnections
+order by query_stay desc
+limit 5;</code></pre></div>
+<h3 id="查看之前执行的sql">查看之前执行的sql</h3>
+<div class="code-block code-line-numbers open" style="counter-reset: code-block 0">
+    <div class="code-header language-">
+        <span class="code-title"><i class="arrow fas fa-angle-right fa-fw" aria-hidden="true"></i></span>
+        <span class="ellipses"><i class="fas fa-ellipsis-h fa-fw" aria-hidden="true"></i></span>
+        <span class="copy" title="复制到剪贴板"><i class="far fa-copy fa-fw" aria-hidden="true"></i></span>
+    </div><pre tabindex="0"><code>SELECT 
+  procpid, 
+  start, 
+  now() - start AS lap, 
+  current_query 
+FROM 
+  (SELECT 
+    backendid, 
+    pg_stat_get_backend_pid(S.backendid) AS procpid, 
+    pg_stat_get_backend_activity_start(S.backendid) AS start, 
+    pg_stat_get_backend_activity(S.backendid) AS current_query 
+  FROM 
+    (SELECT pg_stat_get_backend_idset() AS backendid) AS S 
+  ) AS S 
+WHERE 
+  current_query &lt;&gt; &#39;&lt;IDLE&gt;&#39; 
+ORDER BY 
+  lap DESC;</code></pre></div>
+<p>procpid：进程id ,
+强制结束
+SELECT pg_cancel_backend(进程id)   &ndash;取消后台操作;
+SELECT pg_terminate_backend(PID)   &ndash;中断session;
+start：进程开始时间
+lap：经过时间
+current_query：执行中的sql</p>]]></description>
+</item>
+</channel>
+</rss>
