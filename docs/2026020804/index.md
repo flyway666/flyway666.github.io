@@ -1,0 +1,48 @@
+# 备份恢复脚本
+
+# 备份恢复脚本
+
+备份脚本win
+
+```
+@echo off
+echo execute pg_dump
+set /p dbname=please input database name:
+echo dump database is %dbname%
+set /p ipaddress=please input database IP:
+echo dump databaseIP is %ipaddress%
+D:\ProgramFiles\PostgreSQL\pgAdmin4\v6\runtime\pg_dump.exe --file "D:\\\\%dbname%" --host "%ipaddress%" --port "5432" --username "datalink" --exclude-schema=public --verbose --role "datalink" --format=c --blobs --encoding "UTF8" %dbname%
+echo done!
+pause
+
+```
+
+备份所有ddl
+
+```
+@echo off
+echo execute pg_dump
+set /p dbname=please input database name:
+echo dump database is %dbname%
+set /p ipaddress=please input database IP:
+echo dump databaseIP is %ipaddress%
+D:\ProgramFiles\PostgreSQL\pgAdmin4\v6\runtime\pg_dump.exe --file "D:\\\\%dbname%" --host "%ipaddress%" --port "5432" --username "datalink" --exclude-schema=public --verbose --role "datalink" --format=p --schema-only --blobs --encoding "UTF8" %dbname%
+echo done!
+pause
+```
+
+
+恢复脚本win
+
+```
+@echo off
+echo execute pg_dump
+set /p dbname=please input database name:
+echo dump database is %dbname%
+set /p ipaddress=please input database IP:
+echo dump databaseIP is %ipaddress%
+D:\ProgramFiles\PostgreSQL\pgAdmin4\v6\runtime\pg_restore.exe --host "%ipaddress%" --port "5432" --username "datalink"  --role "datalink" --dbname "%dbname%" --exclude-schema=public --verbose "D:\\%dbname%"
+echo done!
+pause
+```
+

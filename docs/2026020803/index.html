@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="robots" content="noodp" />
+        <title>统计表膨胀率 - jim</title><meta name="Description" content="Hugo theme - LoveIt"><meta property="og:url" content="https://example.com/2026020803/">
+  <meta property="og:site_name" content="jim">
+  <meta property="og:title" content="统计表膨胀率">
+  <meta property="og:description" content="统计表膨胀率 WITH bloat AS ( WITH t1 AS ( SELECT schemaname, tablename, ( 23 &#43; CEIL ( COUNT ( * ) &gt;&gt; 3 ) ) :: BIGINT nullheader, MAX ( null_frac ) nullfrac, CEIL ( SUM ( ( 1 - null_frac ) * avg_width ) ) :: BIGINT datawidth FROM pg_stats --where schemaname=&#39;form&#39; GROUP BY schemaname, tablename ), t2 AS ( SELECT schemaname, tablename, ( datawidth &#43; 8 - ( CASE WHEN datawidth % 8 = 0 THEN 8 ELSE datawidth % 8 END ) ) -- avg data len &#43; ( 1 - nullfrac ) * 24 &#43; nullfrac * ( nullheader &#43; 8 - ( CASE WHEN nullheader % 8 = 0 THEN 8 ELSE nullheader % 8 END ) ) avgtuplelen FROM t1 ) SELECT C .oid, avgtuplelen FROM t2 T, pg_class C, pg_namespace n WHERE T.schemaname = n.nspname AND C.relname = T.tablename AND C.relnamespace = n.oid AND relpages &gt; 100 and c.relname in (	select relname from ( select relname , reltuples::numeric as 记录数 from pg_class where relkind = &#39;r&#39; )t order by 记录数 desc limit 50) ), parti AS ( SELECT parti.inhparent, parti.inhrelid, stat.n_dead_tup, c.relpages, c.reltuples FROM ( SELECT inhparent, inhrelid FROM pg_inherits inh UNION ALL ( SELECT b.inhparent AS grandpa, A.inhrelid me FROM pg_inherits A INNER JOIN pg_inherits b ON A.inhparent = b.inhrelid ) ) AS parti inner join pg_class c on parti.inhrelid = c.oid LEFT JOIN pg_stat_user_tables stat ON parti.inhrelid = stat.relid where c.relname in (	select relname from ( select relname , reltuples::numeric as 记录数 from pg_class where relkind = &#39;r&#39; )t order by 记录数 desc limit 50) ) SELECT n.nspname &#34;tableSchema&#34;, C.relname &#34;tableName&#34;, &#39;vacuum full &#39;||C.relname||&#39;;&#39; &#34;sql&#34;, round(SUM ( pg_total_relation_size ( COALESCE ( parti1.inhrelid, C.oid ) )&#43;0.0 )/1024/1024/1024,2) AS &#34;表大小 GB&#34;, --表及其子分区、索引大小，包含索引 round( SUM ( pg_total_relation_size ( COALESCE ( parti1.inhrelid, C.oid ) ) ) / ( SELECT SUM ( pg_database_size ( datname ) ) AS dbsize FROM pg_database ), 4 ) AS &#34;占数据文件比例%&#34;,-- 表占数据文件比例	to_char(COALESCE ( MAX ( c.reltuples ), 0 ) &#43; COALESCE ( SUM ( COALESCE ( parti1.reltuples, 0 ) ), 0 ),&#39;9999999999&#39;) AS &#34;元组(记录行数)&#34;, CASE WHEN (coalesce(max( bloat.avgtuplelen), 0) = 0 and coalesce(avg( parti1.avgtuplelen), 0) = 0) or MAX ( COALESCE (c.relpages , 0 ) ) &#43; SUM ( COALESCE ( parti1.relpages, 0 )) = 0 THEN 0 ELSE round((1 - CEIL ( (MAX ( COALESCE ( c.reltuples, 0 )) &#43; SUM ( COALESCE ( parti1.reltuples, 0 ))) * (case when max( parti1.avgtuplelen) is not null then AVG( parti1.avgtuplelen) else max ( COALESCE ( bloat.avgtuplelen, 0 ) ) end ) / 8168) / ( MAX ( COALESCE (c.relpages , 0 ) ) &#43; SUM ( COALESCE ( parti1.relpages, 0 )) ))::NUMERIC, 2)*100 END AS &#34;表膨胀率%&#34;, COALESCE ( MAX ( stat.n_dead_tup ), 0 ) &#43; COALESCE ( SUM ( COALESCE ( parti1.n_dead_tup, 0 ) ), 0 ) AS &#34;死元组(行)&#34; --表内死数据行 FROM pg_class C INNER JOIN pg_namespace n ON C.relnamespace = n.oid LEFT JOIN pg_stat_user_tables stat ON C.oid = stat.relid LEFT JOIN (select p.*, b.* from parti p left join bloat as b ON p.inhrelid = b.oid) as parti1 on c.oid = parti1.inhparent LEFT JOIN bloat ON C.oid = bloat.oid WHERE n.nspname NOT IN ( &#39;pg_catalog&#39;, &#39;information_schema&#39; ) AND n.nspname !~ &#39;^pg_toast&#39; AND C.relkind IN ( &#39;r&#39;, &#39;p&#39; ) AND C.oid NOT IN ( SELECT inhrelid FROM pg_inherits ) and c.relname in (	select relname from ( select relname , reltuples::numeric as 记录数, &#39;truncate table &#39;||relname||&#39; ;&#39; from pg_class where relkind = &#39;r&#39; )t order by 记录数 desc limit 50) GROUP BY C.relname, n.nspname ORDER BY --	&#34;表大小 GB&#34; DESC &#34;表膨胀率%&#34; DESC limit 100">
+  <meta property="og:locale" content="zh_CN">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="posts">
+    <meta property="article:published_time" content="2026-02-08T16:33:07+08:00">
+    <meta property="article:modified_time" content="2026-02-08T16:33:07+08:00">
+    <meta property="og:image" content="https://example.com/images/logo.png">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://example.com/images/logo.png">
+  <meta name="twitter:title" content="统计表膨胀率">
+  <meta name="twitter:description" content="统计表膨胀率 WITH bloat AS ( WITH t1 AS ( SELECT schemaname, tablename, ( 23 &#43; CEIL ( COUNT ( * ) &gt;&gt; 3 ) ) :: BIGINT nullheader, MAX ( null_frac ) nullfrac, CEIL ( SUM ( ( 1 - null_frac ) * avg_width ) ) :: BIGINT datawidth FROM pg_stats --where schemaname=&#39;form&#39; GROUP BY schemaname, tablename ), t2 AS ( SELECT schemaname, tablename, ( datawidth &#43; 8 - ( CASE WHEN datawidth % 8 = 0 THEN 8 ELSE datawidth % 8 END ) ) -- avg data len &#43; ( 1 - nullfrac ) * 24 &#43; nullfrac * ( nullheader &#43; 8 - ( CASE WHEN nullheader % 8 = 0 THEN 8 ELSE nullheader % 8 END ) ) avgtuplelen FROM t1 ) SELECT C .oid, avgtuplelen FROM t2 T, pg_class C, pg_namespace n WHERE T.schemaname = n.nspname AND C.relname = T.tablename AND C.relnamespace = n.oid AND relpages &gt; 100 and c.relname in (	select relname from ( select relname , reltuples::numeric as 记录数 from pg_class where relkind = &#39;r&#39; )t order by 记录数 desc limit 50) ), parti AS ( SELECT parti.inhparent, parti.inhrelid, stat.n_dead_tup, c.relpages, c.reltuples FROM ( SELECT inhparent, inhrelid FROM pg_inherits inh UNION ALL ( SELECT b.inhparent AS grandpa, A.inhrelid me FROM pg_inherits A INNER JOIN pg_inherits b ON A.inhparent = b.inhrelid ) ) AS parti inner join pg_class c on parti.inhrelid = c.oid LEFT JOIN pg_stat_user_tables stat ON parti.inhrelid = stat.relid where c.relname in (	select relname from ( select relname , reltuples::numeric as 记录数 from pg_class where relkind = &#39;r&#39; )t order by 记录数 desc limit 50) ) SELECT n.nspname &#34;tableSchema&#34;, C.relname &#34;tableName&#34;, &#39;vacuum full &#39;||C.relname||&#39;;&#39; &#34;sql&#34;, round(SUM ( pg_total_relation_size ( COALESCE ( parti1.inhrelid, C.oid ) )&#43;0.0 )/1024/1024/1024,2) AS &#34;表大小 GB&#34;, --表及其子分区、索引大小，包含索引 round( SUM ( pg_total_relation_size ( COALESCE ( parti1.inhrelid, C.oid ) ) ) / ( SELECT SUM ( pg_database_size ( datname ) ) AS dbsize FROM pg_database ), 4 ) AS &#34;占数据文件比例%&#34;,-- 表占数据文件比例	to_char(COALESCE ( MAX ( c.reltuples ), 0 ) &#43; COALESCE ( SUM ( COALESCE ( parti1.reltuples, 0 ) ), 0 ),&#39;9999999999&#39;) AS &#34;元组(记录行数)&#34;, CASE WHEN (coalesce(max( bloat.avgtuplelen), 0) = 0 and coalesce(avg( parti1.avgtuplelen), 0) = 0) or MAX ( COALESCE (c.relpages , 0 ) ) &#43; SUM ( COALESCE ( parti1.relpages, 0 )) = 0 THEN 0 ELSE round((1 - CEIL ( (MAX ( COALESCE ( c.reltuples, 0 )) &#43; SUM ( COALESCE ( parti1.reltuples, 0 ))) * (case when max( parti1.avgtuplelen) is not null then AVG( parti1.avgtuplelen) else max ( COALESCE ( bloat.avgtuplelen, 0 ) ) end ) / 8168) / ( MAX ( COALESCE (c.relpages , 0 ) ) &#43; SUM ( COALESCE ( parti1.relpages, 0 )) ))::NUMERIC, 2)*100 END AS &#34;表膨胀率%&#34;, COALESCE ( MAX ( stat.n_dead_tup ), 0 ) &#43; COALESCE ( SUM ( COALESCE ( parti1.n_dead_tup, 0 ) ), 0 ) AS &#34;死元组(行)&#34; --表内死数据行 FROM pg_class C INNER JOIN pg_namespace n ON C.relnamespace = n.oid LEFT JOIN pg_stat_user_tables stat ON C.oid = stat.relid LEFT JOIN (select p.*, b.* from parti p left join bloat as b ON p.inhrelid = b.oid) as parti1 on c.oid = parti1.inhparent LEFT JOIN bloat ON C.oid = bloat.oid WHERE n.nspname NOT IN ( &#39;pg_catalog&#39;, &#39;information_schema&#39; ) AND n.nspname !~ &#39;^pg_toast&#39; AND C.relkind IN ( &#39;r&#39;, &#39;p&#39; ) AND C.oid NOT IN ( SELECT inhrelid FROM pg_inherits ) and c.relname in (	select relname from ( select relname , reltuples::numeric as 记录数, &#39;truncate table &#39;||relname||&#39; ;&#39; from pg_class where relkind = &#39;r&#39; )t order by 记录数 desc limit 50) GROUP BY C.relname, n.nspname ORDER BY --	&#34;表大小 GB&#34; DESC &#34;表膨胀率%&#34; DESC limit 100">
+<meta name="application-name" content="LoveIt">
+<meta name="apple-mobile-web-app-title" content="LoveIt">
+<meta name="referrer" content="no-referrer" /><meta name="theme-color" content="#ffffff"><meta name="msapplication-TileColor" content="#da532c"><link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png"><link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png"><link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5"><link rel="manifest" href="/site.webmanifest"><link rel="canonical" href="https://example.com/2026020803/" /><link rel="prev" href="https://example.com/2026020802/" /><link rel="next" href="https://example.com/2026020804/" /><link rel="stylesheet" href="/css/style.min.css"><link rel="preload" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.7.2/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+        <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.7.2/css/all.min.css"></noscript><link rel="preload" href="https://cdn.jsdelivr.net/npm/animate.css@4.1.1/animate.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+        <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@4.1.1/animate.min.css"></noscript><script type="application/ld+json">
+    {
+        "@context": "http://schema.org",
+        "@type": "BlogPosting",
+        "headline": "统计表膨胀率",
+        "inLanguage": "zh-CN",
+        "mainEntityOfPage": {
+            "@type": "WebPage",
+            "@id": "https:\/\/example.com\/2026020803\/"
+        },"image": ["https:\/\/example.com\/images\/Apple-Devices-Preview.png"],"genre": "posts","wordcount":  739 ,
+        "url": "https:\/\/example.com\/2026020803\/","datePublished": "2026-02-08T16:33:07+08:00","dateModified": "2026-02-08T16:33:07+08:00","license": "This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.","publisher": {
+            "@type": "Organization",
+            "name": "xxxx","logo": "https:\/\/example.com\/images\/avatar.png"},"author": {
+                "@type": "Person",
+                "name": "jim"
+            },"description": ""
+    }
+    </script></head>
+    <body data-header-desktop="fixed" data-header-mobile="auto"><script>
+          const query = window.matchMedia('(prefers-color-scheme: dark)');
+          function applyTheme() {
+            let theme = window.localStorage?.getItem('theme') || 'auto';
+            let isDark = theme === 'dark' || (theme === 'auto' && query.matches);
+            document.body.setAttribute('theme', isDark? 'dark' : 'light');
+            document.body.setAttribute('cfg-theme', theme);
+          }
+
+          applyTheme();
+          query.addEventListener('change', applyTheme);
+        </script>
+
+        <div id="mask"></div><div class="wrapper"><header class="desktop" id="header-desktop">
+    <div class="header-wrapper">
+        <div class="header-title">
+            <a href="/" title="jim"><span class="header-title-pre"><i class='far fa-kiss-wink-heart fa-fw' aria-hidden='true'></i></span>jim的个人博客</a>
+        </div>
+        <div class="menu">
+            <div class="menu-inner"><a class="menu-item" href="/posts/"> 所有文章 </a><a class="menu-item" href="/tags/"> 标签 </a><a class="menu-item" href="/categories/"> 分类 </a><a class="menu-item" href="/categories/documentation/"> 文档 </a><a class="menu-item" href="/about/"> 关于 </a><a class="menu-item" href="https://github.com/dillonzq/LoveIt" title="GitHub" rel="noopener noreffer" target="_blank"><i class='fab fa-github fa-fw' aria-hidden='true'></i>  </a><span class="menu-item delimiter"></span><span class="menu-item search" id="search-desktop">
+                        <input type="text" placeholder="搜索文章标题或内容..." id="search-input-desktop">
+                        <a href="javascript:void(0);" class="search-button search-toggle" id="search-toggle-desktop" title="搜索">
+                            <i class="fas fa-search fa-fw" aria-hidden="true"></i>
+                        </a>
+                        <a href="javascript:void(0);" class="search-button search-clear" id="search-clear-desktop" title="清空">
+                            <i class="fas fa-times-circle fa-fw" aria-hidden="true"></i>
+                        </a>
+                        <span class="search-button search-loading" id="search-loading-desktop">
+                            <i class="fas fa-spinner fa-fw fa-spin" aria-hidden="true"></i>
+                        </span>
+                    </span><a href="javascript:void(0);" class="menu-item theme-switch" title="切换主题">
+                    <i class="fas fa-adjust fa-fw" aria-hidden="true"></i>
+                </a><a href="javascript:void(0);" class="menu-item language" title="选择语言">
+                    <i class="fa fa-globe fa-fw" aria-hidden="true"></i>                      
+                    <select class="language-select" id="language-select-desktop" onchange="location = this.value;"><option value="/2026020803/" selected>简体中文</option></select>
+                </a></div>
+        </div>
+    </div>
+</header><header class="mobile" id="header-mobile">
+    <div class="header-container">
+        <div class="header-wrapper">
+            <div class="header-title">
+                <a href="/" title="jim"><span class="header-title-pre"><i class='far fa-kiss-wink-heart fa-fw' aria-hidden='true'></i></span>jim的个人博客</a>
+            </div>
+            <div class="menu-toggle" id="menu-toggle-mobile">
+                <span></span><span></span><span></span>
+            </div>
+        </div>
+        <div class="menu" id="menu-mobile"><div class="search-wrapper">
+                    <div class="search mobile" id="search-mobile">
+                        <input type="text" placeholder="搜索文章标题或内容..." id="search-input-mobile">
+                        <a href="javascript:void(0);" class="search-button search-toggle" id="search-toggle-mobile" title="搜索">
+                            <i class="fas fa-search fa-fw" aria-hidden="true"></i>
+                        </a>
+                        <a href="javascript:void(0);" class="search-button search-clear" id="search-clear-mobile" title="清空">
+                            <i class="fas fa-times-circle fa-fw" aria-hidden="true"></i>
+                        </a>
+                        <span class="search-button search-loading" id="search-loading-mobile">
+                            <i class="fas fa-spinner fa-fw fa-spin" aria-hidden="true"></i>
+                        </span>
+                    </div>
+                    <a href="javascript:void(0);" class="search-cancel" id="search-cancel-mobile">
+                        取消
+                    </a>
+                </div><a class="menu-item" href="/posts/" title="">所有文章</a><a class="menu-item" href="/tags/" title="">标签</a><a class="menu-item" href="/categories/" title="">分类</a><a class="menu-item" href="/categories/documentation/" title="">文档</a><a class="menu-item" href="/about/" title="">关于</a><a class="menu-item" href="https://github.com/dillonzq/LoveIt" title="GitHub" rel="noopener noreffer" target="_blank"><i class='fab fa-github fa-fw' aria-hidden='true'></i></a><a href="javascript:void(0);" class="menu-item theme-switch" title="切换主题">
+                <i class="fas fa-adjust fa-fw" aria-hidden="true"></i>
+            </a><a href="javascript:void(0);" class="menu-item" title="选择语言">
+                    <i class="fa fa-globe fa-fw" aria-hidden="true"></i>
+                    <select class="language-select" onchange="location = this.value;"><option value="/2026020803/" selected>简体中文</option></select>
+                </a></div>
+    </div>
+</header><div class="search-dropdown desktop">
+        <div id="search-dropdown-desktop"></div>
+    </div>
+    <div class="search-dropdown mobile">
+        <div id="search-dropdown-mobile"></div>
+    </div><main class="main">
+                <div class="container"><div class="toc" id="toc-auto">
+            <h2 class="toc-title">目录</h2>
+            <div class="toc-content" id="toc-content-auto"></div>
+        </div><article class="page single"><h1 class="single-title animate__animated animate__flipInX">统计表膨胀率</h1><div class="post-meta">
+            <div class="post-meta-line"><span class="post-author"><a href="/" title="Author" rel="author" class="author"><i class="fas fa-user-circle fa-fw" aria-hidden="true"></i>jim</a></span></div>
+            <div class="post-meta-line"><i class="far fa-calendar-alt fa-fw" aria-hidden="true"></i>&nbsp;<time datetime="2026-02-08">2026-02-08</time>&nbsp;<i class="fas fa-pencil-alt fa-fw" aria-hidden="true"></i>&nbsp;约 739 字&nbsp;
+                <i class="far fa-clock fa-fw" aria-hidden="true"></i>&nbsp;预计阅读 2 分钟&nbsp;<span id="/2026020803/" class="leancloud_visitors" data-flag-title="统计表膨胀率">
+                        <i class="far fa-eye fa-fw" aria-hidden="true"></i>&nbsp;<span class=leancloud-visitors-count></span>&nbsp;次阅读
+                    </span>&nbsp;</div>
+        </div><div class="details toc" id="toc-static"  data-kept="">
+                <div class="details-summary toc-title">
+                    <span>目录</span>
+                    <span><i class="details-icon fas fa-angle-right" aria-hidden="true"></i></span>
+                </div>
+                <div class="details-content toc-content" id="toc-content-static"><nav id="TableOfContents"></nav></div>
+            </div><div class="content" id="content"><h1 id="统计表膨胀率">统计表膨胀率</h1>
+<div class="code-block code-line-numbers" style="counter-reset: code-block 0">
+    <div class="code-header language-">
+        <span class="code-title"><i class="arrow fas fa-angle-right fa-fw" aria-hidden="true"></i></span>
+        <span class="ellipses"><i class="fas fa-ellipsis-h fa-fw" aria-hidden="true"></i></span>
+        <span class="copy" title="复制到剪贴板"><i class="far fa-copy fa-fw" aria-hidden="true"></i></span>
+    </div><pre tabindex="0"><code>WITH bloat AS (
+	WITH t1 AS (
+		SELECT
+			schemaname,
+			tablename,
+			( 23 + CEIL ( COUNT ( * ) &gt;&gt; 3 ) ) :: BIGINT nullheader,
+			MAX ( null_frac ) nullfrac,
+			CEIL ( SUM ( ( 1 - null_frac ) * avg_width ) ) :: BIGINT datawidth 
+		FROM
+			pg_stats 
+			--where schemaname=&#39;form&#39;
+		GROUP BY
+			schemaname,
+			tablename 
+		),
+		t2 AS (
+		SELECT
+			schemaname,
+			tablename,
+			( datawidth + 8 - ( CASE WHEN datawidth % 8 = 0 THEN 8 ELSE datawidth % 8 END ) ) -- avg data len
+			+ ( 1 - nullfrac ) * 24 + nullfrac * ( nullheader + 8 - ( CASE WHEN nullheader % 8 = 0 THEN 8 ELSE nullheader % 8 END ) ) avgtuplelen 
+FROM
+	t1 
+	) SELECT C
+	.oid,
+	avgtuplelen
+FROM
+	t2 T,
+	pg_class C,
+	pg_namespace n 
+WHERE
+	T.schemaname = n.nspname 
+	AND C.relname = T.tablename 
+	AND C.relnamespace = n.oid 
+	AND relpages &gt; 100 
+and c.relname in 
+	(	select relname from (
+select relname , reltuples::numeric as 记录数
+from pg_class
+where relkind = &#39;r&#39;
+)t order by 记录数 desc limit 50)
+	),
+	parti AS (
+	SELECT
+		parti.inhparent,
+		parti.inhrelid,
+		stat.n_dead_tup,
+		c.relpages,
+		c.reltuples
+	FROM
+		(
+		SELECT
+			inhparent,
+			inhrelid
+		FROM
+			pg_inherits inh UNION ALL
+			( SELECT b.inhparent AS grandpa, A.inhrelid me FROM pg_inherits A INNER JOIN pg_inherits b ON A.inhparent = b.inhrelid ) 
+		) AS parti
+		inner join pg_class c on parti.inhrelid = c.oid
+		LEFT JOIN pg_stat_user_tables stat ON parti.inhrelid = stat.relid 
+	 where  c.relname in 
+	(	select relname from (
+select relname , reltuples::numeric as 记录数
+from pg_class
+where relkind = &#39;r&#39;
+)t order by 记录数 desc limit 50)
+	) SELECT
+	 n.nspname &#34;tableSchema&#34;,
+	C.relname &#34;tableName&#34;,
+	&#39;vacuum full &#39;||C.relname||&#39;;&#39; &#34;sql&#34;,
+	round(SUM ( pg_total_relation_size ( COALESCE ( parti1.inhrelid, C.oid ) )+0.0 )/1024/1024/1024,2) AS &#34;表大小 GB&#34;, --表及其子分区、索引大小，包含索引
+	round(
+		SUM ( pg_total_relation_size ( COALESCE ( parti1.inhrelid, C.oid ) ) ) / ( SELECT SUM ( pg_database_size ( datname ) ) AS dbsize FROM pg_database ),
+		4 
+	) AS &#34;占数据文件比例%&#34;,-- 表占数据文件比例	 
+	to_char(COALESCE ( MAX ( c.reltuples ), 0 ) + COALESCE ( SUM ( COALESCE ( parti1.reltuples, 0 ) ), 0 ),&#39;9999999999&#39;) AS &#34;元组(记录行数)&#34;,
+CASE
+		WHEN (coalesce(max( bloat.avgtuplelen), 0) = 0  and coalesce(avg( parti1.avgtuplelen), 0) = 0) or  MAX ( COALESCE (c.relpages , 0 ) ) + SUM ( COALESCE ( parti1.relpages, 0 ))  = 0 THEN
+		0 ELSE  
+		round((1 - CEIL ( (MAX ( COALESCE ( c.reltuples, 0 ))  + SUM ( COALESCE ( parti1.reltuples, 0 ))) * 
+		(case when max( parti1.avgtuplelen) is not null then AVG( parti1.avgtuplelen)  else max ( COALESCE ( bloat.avgtuplelen, 0 ) ) end  ) / 8168) / 
+		(  MAX ( COALESCE (c.relpages , 0 ) ) + SUM ( COALESCE ( parti1.relpages, 0 )) ))::NUMERIC, 2)*100
+	END AS &#34;表膨胀率%&#34;,
+	COALESCE ( MAX ( stat.n_dead_tup ), 0 ) + COALESCE ( SUM ( COALESCE ( parti1.n_dead_tup, 0 ) ), 0 ) AS &#34;死元组(行)&#34; --表内死数据行
+FROM
+	pg_class
+	C INNER JOIN pg_namespace n ON C.relnamespace = n.oid
+	LEFT JOIN pg_stat_user_tables stat ON C.oid = stat.relid
+	LEFT JOIN (select p.*, b.* from parti p left join bloat as b  ON p.inhrelid = b.oid) as parti1 on c.oid = parti1.inhparent
+	LEFT JOIN bloat ON C.oid = bloat.oid 
+WHERE
+	n.nspname NOT IN ( &#39;pg_catalog&#39;, &#39;information_schema&#39; ) 
+	AND n.nspname !~ &#39;^pg_toast&#39; 
+	AND C.relkind IN ( &#39;r&#39;, &#39;p&#39; ) 
+	AND C.oid NOT IN ( SELECT inhrelid FROM pg_inherits ) 
+	and c.relname in 
+	(	select relname from (
+select relname , reltuples::numeric as 记录数,
+&#39;truncate table &#39;||relname||&#39; ;&#39;
+from pg_class
+where relkind = &#39;r&#39;
+)t order by 记录数 desc limit 50)
+GROUP BY
+	C.relname,
+	n.nspname 
+ORDER BY
+--	&#34;表大小 GB&#34; DESC
+&#34;表膨胀率%&#34; DESC
+ limit 100
+	</code></pre></div>
+</div><div class="post-footer" id="post-footer">
+    <div class="post-info">
+        <div class="post-info-line">
+            <div class="post-info-mod">
+                <span>更新于 2026-02-08</span>
+            </div></div>
+        <div class="post-info-line">
+            <div class="post-info-md"><span>
+                            <a class="link-to-markdown" href="/2026020803/index.md" target="_blank">阅读原始文档</a>
+                        </span></div>
+            <div class="post-info-share">
+                <span><a href="javascript:void(0);" title="分享到 X" data-sharer="x" data-url="https://example.com/2026020803/" data-title="统计表膨胀率"><i class="fab fa-x-twitter fa-fw" aria-hidden="true"></i></a><a href="javascript:void(0);" title="分享到 Threads" data-sharer="threads" data-url="https://example.com/2026020803/" data-title="统计表膨胀率"><i class="fab fa-threads fa-fw" aria-hidden="true"></i></a><a href="javascript:void(0);" title="分享到 Facebook" data-sharer="facebook" data-url="https://example.com/2026020803/"><i class="fab fa-facebook-square fa-fw" aria-hidden="true"></i></a><a href="javascript:void(0);" title="分享到 Hacker News" data-sharer="hackernews" data-url="https://example.com/2026020803/" data-title="统计表膨胀率"><i class="fab fa-hacker-news fa-fw" aria-hidden="true"></i></a><a href="javascript:void(0);" title="分享到 Line" data-sharer="line" data-url="https://example.com/2026020803/" data-title="统计表膨胀率"><i data-svg-src="https://cdn.jsdelivr.net/npm/simple-icons@15.14.0/icons/line.svg" aria-hidden="true"></i></a><a href="javascript:void(0);" title="分享到 微博" data-sharer="weibo" data-url="https://example.com/2026020803/" data-title="统计表膨胀率" data-ralateuid="xxxx"><i class="fab fa-weibo fa-fw" aria-hidden="true"></i></a><a href="javascript:void(0);" title="分享到 Diaspora" data-sharer="diaspora" data-url="https://example.com/2026020803/" data-title="统计表膨胀率" data-description=""><i class="fab fa-diaspora fa-fw" aria-hidden="true"></i></a><a href="https://t.me/share/url?url=https%3a%2f%2fexample.com%2f2026020803%2f&amp;text=%e7%bb%9f%e8%ae%a1%e8%a1%a8%e8%86%a8%e8%83%80%e7%8e%87" target="_blank" title="分享到 Telegram"><i class="fab fa-telegram fa-fw" aria-hidden="true"></i></a></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="post-info-more">
+        <section class="post-tags"></section>
+        <section>
+            <span><a href="javascript:void(0);" onclick="window.history.back();">返回</a></span>&nbsp;|&nbsp;<span><a href="/">主页</a></span>
+        </section>
+    </div>
+
+    <div class="post-nav"><a href="/2026020802/" class="prev" rel="prev" title="postggresq备份脚本"><i class="fas fa-angle-left fa-fw" aria-hidden="true"></i>postggresq备份脚本</a>
+            <a href="/2026020804/" class="next" rel="next" title="备份恢复脚本">备份恢复脚本<i class="fas fa-angle-right fa-fw" aria-hidden="true"></i></a></div>
+</div>
+<div id="comments"><div id="valine" class="comment"></div><noscript>
+                Please enable JavaScript to view the comments powered by <a href="https://valine.js.org/">Valine</a>.
+            </noscript></div></article></div>
+            </main><footer class="footer">
+        <div class="footer-container"><div class="footer-line">由 <a href="https://gohugo.io/" target="_blank" rel="noopener noreffer" title="Hugo 0.145.0">Hugo</a> 强力驱动 | 主题 - <a href="https://github.com/dillonzq/LoveIt" target="_blank" rel="noopener noreffer" title="LoveIt 0.3.1-DEV"><i class="far fa-kiss-wink-heart fa-fw" aria-hidden="true"></i> LoveIt</a>
+                </div><div class="footer-line" itemscope itemtype="http://schema.org/CreativeWork"><i class="far fa-copyright fa-fw" aria-hidden="true"></i><span itemprop="copyrightYear">2019 - 2026</span><span class="author" itemprop="copyrightHolder">&nbsp;<a href="/" target="_blank">jim</a></span>&nbsp;|&nbsp;<span class="license"><a rel="license external nofollow noopener noreffer" href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank">CC BY-NC 4.0</a></span></div>
+        </div>
+    </footer></div>
+
+        <div id="fixed-buttons"><a href="#" id="back-to-top" class="fixed-button" title="回到顶部">
+                <i class="fas fa-arrow-up fa-fw" aria-hidden="true"></i>
+            </a>
+        </div>
+
+        <div id="fixed-buttons-hidden"><a href="#" id="view-comments" class="fixed-button" title="查看评论">
+                <i class="fas fa-comment fa-fw" aria-hidden="true"></i>
+            </a>
+        </div><link rel="stylesheet" href="/lib/valine/valine.min.css"><script src="https://cdn.jsdelivr.net/npm/valine@1.5.3/dist/Valine.min.js"></script><script src="https://cdn.jsdelivr.net/npm/autocomplete.js@0.38.1/dist/autocomplete.min.js"></script><script src="https://cdn.jsdelivr.net/npm/algoliasearch@5.20.2/dist/lite/builds/browser.umd.min.js"></script><script src="https://cdn.jsdelivr.net/npm/lazysizes@5.3.2/lazysizes.min.js"></script><script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.11/dist/clipboard.min.js"></script><script src="https://cdn.jsdelivr.net/npm/sharer.js@0.5.2/sharer.min.js"></script><script>window.config={"comment":{"valine":{"appId":"QGzwQXOqs5JOhN4RGPOkR2mR-MdYXbMMI","appKey":"WBmoGyJtbqUswvfLh6L8iEBr","avatar":"mp","el":"#valine","emojiCDN":"https://cdn.jsdelivr.net/npm/emoji-datasource-google@15.1.2/img/google/64/","emojiMaps":{"100":"1f4af.png","alien":"1f47d.png","anger":"1f4a2.png","angry":"1f620.png","anguished":"1f627.png","astonished":"1f632.png","black_heart":"1f5a4.png","blue_heart":"1f499.png","blush":"1f60a.png","bomb":"1f4a3.png","boom":"1f4a5.png","broken_heart":"1f494.png","brown_heart":"1f90e.png","clown_face":"1f921.png","cold_face":"1f976.png","cold_sweat":"1f630.png","confounded":"1f616.png","confused":"1f615.png","cry":"1f622.png","crying_cat_face":"1f63f.png","cupid":"1f498.png","dash":"1f4a8.png","disappointed":"1f61e.png","disappointed_relieved":"1f625.png","dizzy":"1f4ab.png","dizzy_face":"1f635.png","drooling_face":"1f924.png","exploding_head":"1f92f.png","expressionless":"1f611.png","face_vomiting":"1f92e.png","face_with_cowboy_hat":"1f920.png","face_with_hand_over_mouth":"1f92d.png","face_with_head_bandage":"1f915.png","face_with_monocle":"1f9d0.png","face_with_raised_eyebrow":"1f928.png","face_with_rolling_eyes":"1f644.png","face_with_symbols_on_mouth":"1f92c.png","face_with_thermometer":"1f912.png","fearful":"1f628.png","flushed":"1f633.png","frowning":"1f626.png","ghost":"1f47b.png","gift_heart":"1f49d.png","green_heart":"1f49a.png","grimacing":"1f62c.png","grin":"1f601.png","grinning":"1f600.png","hankey":"1f4a9.png","hear_no_evil":"1f649.png","heart":"2764-fe0f.png","heart_decoration":"1f49f.png","heart_eyes":"1f60d.png","heart_eyes_cat":"1f63b.png","heartbeat":"1f493.png","heartpulse":"1f497.png","heavy_heart_exclamation_mark_ornament":"2763-fe0f.png","hole":"1f573-fe0f.png","hot_face":"1f975.png","hugging_face":"1f917.png","hushed":"1f62f.png","imp":"1f47f.png","innocent":"1f607.png","japanese_goblin":"1f47a.png","japanese_ogre":"1f479.png","joy":"1f602.png","joy_cat":"1f639.png","kiss":"1f48b.png","kissing":"1f617.png","kissing_cat":"1f63d.png","kissing_closed_eyes":"1f61a.png","kissing_heart":"1f618.png","kissing_smiling_eyes":"1f619.png","laughing":"1f606.png","left_speech_bubble":"1f5e8-fe0f.png","love_letter":"1f48c.png","lying_face":"1f925.png","mask":"1f637.png","money_mouth_face":"1f911.png","nauseated_face":"1f922.png","nerd_face":"1f913.png","neutral_face":"1f610.png","no_mouth":"1f636.png","open_mouth":"1f62e.png","orange_heart":"1f9e1.png","partying_face":"1f973.png","pensive":"1f614.png","persevere":"1f623.png","pleading_face":"1f97a.png","pouting_cat":"1f63e.png","purple_heart":"1f49c.png","rage":"1f621.png","relaxed":"263a-fe0f.png","relieved":"1f60c.png","revolving_hearts":"1f49e.png","right_anger_bubble":"1f5ef-fe0f.png","robot_face":"1f916.png","rolling_on_the_floor_laughing":"1f923.png","scream":"1f631.png","scream_cat":"1f640.png","see_no_evil":"1f648.png","shushing_face":"1f92b.png","skull":"1f480.png","skull_and_crossbones":"2620-fe0f.png","sleeping":"1f634.png","sleepy":"1f62a.png","slightly_frowning_face":"1f641.png","slightly_smiling_face":"1f642.png","smile":"1f604.png","smile_cat":"1f638.png","smiley":"1f603.png","smiley_cat":"1f63a.png","smiling_face_with_3_hearts":"1f970.png","smiling_imp":"1f608.png","smirk":"1f60f.png","smirk_cat":"1f63c.png","sneezing_face":"1f927.png","sob":"1f62d.png","space_invader":"1f47e.png","sparkling_heart":"1f496.png","speak_no_evil":"1f64a.png","speech_balloon":"1f4ac.png","star-struck":"1f929.png","stuck_out_tongue":"1f61b.png","stuck_out_tongue_closed_eyes":"1f61d.png","stuck_out_tongue_winking_eye":"1f61c.png","sunglasses":"1f60e.png","sweat":"1f613.png","sweat_drops":"1f4a6.png","sweat_smile":"1f605.png","thinking_face":"1f914.png","thought_balloon":"1f4ad.png","tired_face":"1f62b.png","triumph":"1f624.png","two_hearts":"1f495.png","unamused":"1f612.png","upside_down_face":"1f643.png","weary":"1f629.png","white_frowning_face":"2639-fe0f.png","white_heart":"1f90d.png","wink":"1f609.png","woozy_face":"1f974.png","worried":"1f61f.png","yawning_face":"1f971.png","yellow_heart":"1f49b.png","yum":"1f60b.png","zany_face":"1f92a.png","zipper_mouth_face":"1f910.png","zzz":"1f4a4.png"},"enableQQ":false,"highlight":true,"lang":"zh-CN","pageSize":10,"placeholder":"你的评论 ...","recordIP":true,"serverURLs":"https://valine.hugoloveit.com","visitor":true}},"search":{"algoliaAppID":"GZT24PWKNT","algoliaIndex":"index","algoliaSearchKey":"634ab679e825b815de2663de38908f9d","highlightTag":"em","maxResultLength":10,"noResultsFound":"没有找到结果","snippetLength":50,"type":"algolia"}};</script><script src="/js/theme.min.js"></script></body>
+</html>

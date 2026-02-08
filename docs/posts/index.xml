@@ -1,14 +1,287 @@
 <rss xmlns:atom="http://www.w3.org/2005/Atom" version="2.0">
     <channel>
         <title>所有文章 - jim</title>
-        <link>http://localhost:1313/posts/</link>
+        <link>https://example.com/posts/</link>
         <description>所有文章 | jim</description>
-        <generator>Hugo -- gohugo.io</generator><language>zh-CN</language><copyright>This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.</copyright><lastBuildDate>Sun, 08 Feb 2026 12:18:39 &#43;0800</lastBuildDate><atom:link href="http://localhost:1313/posts/" rel="self" type="application/rss+xml" /><item>
+        <generator>Hugo -- gohugo.io</generator><language>zh-CN</language><copyright>This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.</copyright><lastBuildDate>Sun, 08 Feb 2026 16:33:14 &#43;0800</lastBuildDate><atom:link href="https://example.com/posts/" rel="self" type="application/rss+xml" /><item>
+    <title>pg使用触发器记录ddl</title>
+    <link>https://example.com/2026020805/</link>
+    <pubDate>Sun, 08 Feb 2026 16:33:14 &#43;0800</pubDate>
+    <author>jim</author>
+    <guid>https://example.com/2026020805/</guid>
+    <description><![CDATA[<h1 id="pg使用触发器记录ddl">pg使用触发器记录ddl</h1>
+<p>postgreSQL开放事件触发器，可以实现DDL回收站、DDL防火墙、DDL增量订阅同步等功能，灵活使用事件触发器可以减少维护成本，保护数据安全。
+RDS PostgreSQL开放事件触发器，可以实现DDL回收站、DDL防火墙、DDL增量订阅同步等功能，灵活使用事件触发器可以减少维护成本，保护数据安全。</p>]]></description>
+</item>
+<item>
+    <title>备份恢复脚本</title>
+    <link>https://example.com/2026020804/</link>
+    <pubDate>Sun, 08 Feb 2026 16:33:11 &#43;0800</pubDate>
+    <author>jim</author>
+    <guid>https://example.com/2026020804/</guid>
+    <description><![CDATA[<h1 id="备份恢复脚本">备份恢复脚本</h1>
+<p>备份脚本win</p>
+<div class="code-block code-line-numbers open" style="counter-reset: code-block 0">
+    <div class="code-header language-">
+        <span class="code-title"><i class="arrow fas fa-angle-right fa-fw" aria-hidden="true"></i></span>
+        <span class="ellipses"><i class="fas fa-ellipsis-h fa-fw" aria-hidden="true"></i></span>
+        <span class="copy" title="复制到剪贴板"><i class="far fa-copy fa-fw" aria-hidden="true"></i></span>
+    </div><pre tabindex="0"><code>@echo off
+echo execute pg_dump
+set /p dbname=please input database name:
+echo dump database is %dbname%
+set /p ipaddress=please input database IP:
+echo dump databaseIP is %ipaddress%
+D:\ProgramFiles\PostgreSQL\pgAdmin4\v6\runtime\pg_dump.exe --file &#34;D:\\\\%dbname%&#34; --host &#34;%ipaddress%&#34; --port &#34;5432&#34; --username &#34;datalink&#34; --exclude-schema=public --verbose --role &#34;datalink&#34; --format=c --blobs --encoding &#34;UTF8&#34; %dbname%
+echo done!
+pause</code></pre></div>
+<p>备份所有ddl</p>]]></description>
+</item>
+<item>
+    <title>统计表膨胀率</title>
+    <link>https://example.com/2026020803/</link>
+    <pubDate>Sun, 08 Feb 2026 16:33:07 &#43;0800</pubDate>
+    <author>jim</author>
+    <guid>https://example.com/2026020803/</guid>
+    <description><![CDATA[<h1 id="统计表膨胀率">统计表膨胀率</h1>
+<div class="code-block code-line-numbers" style="counter-reset: code-block 0">
+    <div class="code-header language-">
+        <span class="code-title"><i class="arrow fas fa-angle-right fa-fw" aria-hidden="true"></i></span>
+        <span class="ellipses"><i class="fas fa-ellipsis-h fa-fw" aria-hidden="true"></i></span>
+        <span class="copy" title="复制到剪贴板"><i class="far fa-copy fa-fw" aria-hidden="true"></i></span>
+    </div><pre tabindex="0"><code>WITH bloat AS (
+	WITH t1 AS (
+		SELECT
+			schemaname,
+			tablename,
+			( 23 + CEIL ( COUNT ( * ) &gt;&gt; 3 ) ) :: BIGINT nullheader,
+			MAX ( null_frac ) nullfrac,
+			CEIL ( SUM ( ( 1 - null_frac ) * avg_width ) ) :: BIGINT datawidth 
+		FROM
+			pg_stats 
+			--where schemaname=&#39;form&#39;
+		GROUP BY
+			schemaname,
+			tablename 
+		),
+		t2 AS (
+		SELECT
+			schemaname,
+			tablename,
+			( datawidth + 8 - ( CASE WHEN datawidth % 8 = 0 THEN 8 ELSE datawidth % 8 END ) ) -- avg data len
+			+ ( 1 - nullfrac ) * 24 + nullfrac * ( nullheader + 8 - ( CASE WHEN nullheader % 8 = 0 THEN 8 ELSE nullheader % 8 END ) ) avgtuplelen 
+FROM
+	t1 
+	) SELECT C
+	.oid,
+	avgtuplelen
+FROM
+	t2 T,
+	pg_class C,
+	pg_namespace n 
+WHERE
+	T.schemaname = n.nspname 
+	AND C.relname = T.tablename 
+	AND C.relnamespace = n.oid 
+	AND relpages &gt; 100 
+and c.relname in 
+	(	select relname from (
+select relname , reltuples::numeric as 记录数
+from pg_class
+where relkind = &#39;r&#39;
+)t order by 记录数 desc limit 50)
+	),
+	parti AS (
+	SELECT
+		parti.inhparent,
+		parti.inhrelid,
+		stat.n_dead_tup,
+		c.relpages,
+		c.reltuples
+	FROM
+		(
+		SELECT
+			inhparent,
+			inhrelid
+		FROM
+			pg_inherits inh UNION ALL
+			( SELECT b.inhparent AS grandpa, A.inhrelid me FROM pg_inherits A INNER JOIN pg_inherits b ON A.inhparent = b.inhrelid ) 
+		) AS parti
+		inner join pg_class c on parti.inhrelid = c.oid
+		LEFT JOIN pg_stat_user_tables stat ON parti.inhrelid = stat.relid 
+	 where  c.relname in 
+	(	select relname from (
+select relname , reltuples::numeric as 记录数
+from pg_class
+where relkind = &#39;r&#39;
+)t order by 记录数 desc limit 50)
+	) SELECT
+	 n.nspname &#34;tableSchema&#34;,
+	C.relname &#34;tableName&#34;,
+	&#39;vacuum full &#39;||C.relname||&#39;;&#39; &#34;sql&#34;,
+	round(SUM ( pg_total_relation_size ( COALESCE ( parti1.inhrelid, C.oid ) )+0.0 )/1024/1024/1024,2) AS &#34;表大小 GB&#34;, --表及其子分区、索引大小，包含索引
+	round(
+		SUM ( pg_total_relation_size ( COALESCE ( parti1.inhrelid, C.oid ) ) ) / ( SELECT SUM ( pg_database_size ( datname ) ) AS dbsize FROM pg_database ),
+		4 
+	) AS &#34;占数据文件比例%&#34;,-- 表占数据文件比例	 
+	to_char(COALESCE ( MAX ( c.reltuples ), 0 ) + COALESCE ( SUM ( COALESCE ( parti1.reltuples, 0 ) ), 0 ),&#39;9999999999&#39;) AS &#34;元组(记录行数)&#34;,
+CASE
+		WHEN (coalesce(max( bloat.avgtuplelen), 0) = 0  and coalesce(avg( parti1.avgtuplelen), 0) = 0) or  MAX ( COALESCE (c.relpages , 0 ) ) + SUM ( COALESCE ( parti1.relpages, 0 ))  = 0 THEN
+		0 ELSE  
+		round((1 - CEIL ( (MAX ( COALESCE ( c.reltuples, 0 ))  + SUM ( COALESCE ( parti1.reltuples, 0 ))) * 
+		(case when max( parti1.avgtuplelen) is not null then AVG( parti1.avgtuplelen)  else max ( COALESCE ( bloat.avgtuplelen, 0 ) ) end  ) / 8168) / 
+		(  MAX ( COALESCE (c.relpages , 0 ) ) + SUM ( COALESCE ( parti1.relpages, 0 )) ))::NUMERIC, 2)*100
+	END AS &#34;表膨胀率%&#34;,
+	COALESCE ( MAX ( stat.n_dead_tup ), 0 ) + COALESCE ( SUM ( COALESCE ( parti1.n_dead_tup, 0 ) ), 0 ) AS &#34;死元组(行)&#34; --表内死数据行
+FROM
+	pg_class
+	C INNER JOIN pg_namespace n ON C.relnamespace = n.oid
+	LEFT JOIN pg_stat_user_tables stat ON C.oid = stat.relid
+	LEFT JOIN (select p.*, b.* from parti p left join bloat as b  ON p.inhrelid = b.oid) as parti1 on c.oid = parti1.inhparent
+	LEFT JOIN bloat ON C.oid = bloat.oid 
+WHERE
+	n.nspname NOT IN ( &#39;pg_catalog&#39;, &#39;information_schema&#39; ) 
+	AND n.nspname !~ &#39;^pg_toast&#39; 
+	AND C.relkind IN ( &#39;r&#39;, &#39;p&#39; ) 
+	AND C.oid NOT IN ( SELECT inhrelid FROM pg_inherits ) 
+	and c.relname in 
+	(	select relname from (
+select relname , reltuples::numeric as 记录数,
+&#39;truncate table &#39;||relname||&#39; ;&#39;
+from pg_class
+where relkind = &#39;r&#39;
+)t order by 记录数 desc limit 50)
+GROUP BY
+	C.relname,
+	n.nspname 
+ORDER BY
+--	&#34;表大小 GB&#34; DESC
+&#34;表膨胀率%&#34; DESC
+ limit 100
+	</code></pre></div>]]></description>
+</item>
+<item>
+    <title>postggresq备份脚本</title>
+    <link>https://example.com/2026020802/</link>
+    <pubDate>Sun, 08 Feb 2026 16:31:39 &#43;0800</pubDate>
+    <author>jim</author>
+    <guid>https://example.com/2026020802/</guid>
+    <description><![CDATA[<h3 id="自己编写的备份脚本">自己编写的备份脚本</h3>
+<div class="code-block code-line-numbers" style="counter-reset: code-block 0">
+    <div class="code-header language-">
+        <span class="code-title"><i class="arrow fas fa-angle-right fa-fw" aria-hidden="true"></i></span>
+        <span class="ellipses"><i class="fas fa-ellipsis-h fa-fw" aria-hidden="true"></i></span>
+        <span class="copy" title="复制到剪贴板"><i class="far fa-copy fa-fw" aria-hidden="true"></i></span>
+    </div><pre tabindex="0"><code>#!/bin/bash
+#备份功能的话  记得 在 gkit 推送流水线的时候 要做逻辑分区 ，不要和当前的数据库用一个盘
+# 备份文件目录
+BKUP_DATADIR=/opt/srv/smartcare/hypergis/pg-data
+# 日志文件目录
+log_dir=/opt/srv/smartcare/hypergis/scripts
+#备份日志
+LOG_BK_FILE=${log_dir}/backupCtl_bk.log
+LOG_FILE=${log_dir}/backupCtl.log
+# 日志10M后要转储
+MAX_LOGFILE_SIZE=10485760
+
+# 写日志
+function logMsg()
+{
+    echo &#34;$1&#34; &gt;&gt;  ${LOG_FILE}
+}
+
+# 清理日志文件,保留一个历史备份日志
+function clearLogFile()
+{
+    logFileSize=$(ls -l ${LOG_FILE} | awk &#39;{print $5}&#39;)
+    if [[ ${logFileSize} -gt ${MAX_LOGFILE_SIZE} ]];then
+       logMsg &#34;`date &#39;+%Y-%m-%d %H %M %S&#39;`:log file is greater than ${MAX_LOGFILE_SIZE},backup it now&#34;
+       rm -rf ${LOG_BK_FILE}
+       mv ${LOG_FILE} ${LOG_BK_FILE}
+    fi
+
+}
+
+# 备份数据
+function backupData()
+{
+
+logMsg &#34;`date &#39;+%Y-%m-%d %H %M %S&#39;`:begin backup db&#34;
+local filename=&#34;datalinkbackup_`date &#39;+%Y-%m-%d&#39;`&#34;
+local backfile=${BKUP_DATADIR}&#39;/&#39;${filename}
+docker exec $(docker ps |grep gis-postgresql:11.13|awk &#39;{print $1}&#39;) sh -c &#39;source /opt/gis-postgresql/config/postgres_profile.sh &amp;&amp; pg_dump --port 1523 --username datalink --no-password  -d datalink  --host 127.0.0.1 --format=c --blobs --encoding &#34;UTF8&#34; --verbose --file &#39;${backfile}&#39; &amp;&gt;&gt; &#39;${LOG_FILE}&#39;&#39; 
+logMsg &#34;`date &#39;+%Y-%m-%d %H %M %S&#39;`:end backup db&#34;
+}
+
+#删除超过3天的备份文件
+function clearFile()
+{
+    filePath=$1
+    fileFlag=$2
+logMsg &#34;`date &#39;+%Y-%m-%d %H %M %S&#39;`:begin clearFile&#34;
+    cd ${filePath}
+	local fileNum=$(ls -l |grep ${fileFlag}|wc -l)
+	#Backup files are retained for 7 days.
+	if [ ${fileNum} -ge 3 ];then
+	  local deleteFile=$(ls -l |grep ${fileFlag} | awk -F &#39; &#39; &#39;{print $9}&#39;|awk &#39;NR==1{print}&#39;)
+	  local time=$(stat -c %Y ${deleteFile})
+	  for file in $(ls -l |grep  ${fileFlag} | awk -F &#39; &#39; &#39;{print $9}&#39;)
+	  do
+		local fileCreatDate=$(stat -c %Y ${file})
+		if [[ ${fileCreatDate} &lt; ${time} ]];then
+		  deleteFile=${file}
+		fi
+	  done
+	  if [ -n &#34;${deleteFile}&#34; ];then
+		#clear old data
+		rm -rf ${deleteFile}
+	  fi
+	fi
+	logMsg &#34;`date &#39;+%Y-%m-%d %H %M %S&#39;`:end clearFile&#34;
+}
+
+
+#backup
+function backup_main()
+{
+
+#使用walsender进程判断是否主节点
+
+
+primary_flag=`docker exec $(docker ps |grep gis-postgresql:11.13|awk &#39;{print $1}&#39;) sh -c &#39;source /opt/gis-postgresql/config/postgres_profile.sh &amp;&amp; pg_controldata -D /opt/srv/smartcare/hypergis/pg-data | grep &#34;in production&#34; |wc -l&#39;`
+
+   if [[ &#34;${primary_flag}&#34; -eq 1 ]] then
+#清理备份日志
+clearLogFile
+
+logMsg &#34;`date &#39;+%Y-%m-%d %H %M %S&#39;`:this is primary db&#34;
+#是主节点就备份数据
+backupData ${BKUP_DATADIR}
+#删除超过3天的备份文件
+clearFile ${BKUP_DATADIR} &#34;datalinkbackup&#34;
+
+else
+echo &#34;this is standby db don backup db&#34;
+fi
+}
+
+backup_main</code></pre></div>]]></description>
+</item>
+<item>
+    <title>PostgreSQL锁机制</title>
+    <link>https://example.com/2026020801/</link>
+    <pubDate>Sun, 08 Feb 2026 16:29:23 &#43;0800</pubDate>
+    <author>jim</author>
+    <guid>https://example.com/2026020801/</guid>
+    <description><![CDATA[<p>#PostgreSQL中有两类锁：表级锁和行级锁。当要查询、插入、更新、删除表中数据时，首先要获得表级锁，然后获得行级锁。</p>
+<p>下面对PostgreSQL数据库锁机制的理解，大部分来自与《PostgreSQL修炼之道 从小工到专家》-唐成书中，以及网络上的博客的总结。通过实际测试发现，还是存在一些不合理的点，后面实际的案列中，会有一些说明。</p>]]></description>
+</item>
+<item>
     <title>PG_DBA_运维手册</title>
-    <link>http://localhost:1313/pg_dba/</link>
+    <link>https://example.com/pg_dba/</link>
     <pubDate>Sun, 08 Feb 2026 12:18:39 &#43;0800</pubDate>
     <author>jim</author>
-    <guid>http://localhost:1313/pg_dba/</guid>
+    <guid>https://example.com/pg_dba/</guid>
     <description><![CDATA[<h1 id="pg_dba_运维手册">PG_DBA_运维手册</h1>
 <h3 id="查看database的owner">查看database的owner</h3>
 <div class="code-block code-line-numbers open" style="counter-reset: code-block 0">

@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="robots" content="noodp" />
+        <title>PostgreSQL锁机制 - jim</title><meta name="Description" content="Hugo theme - LoveIt"><meta property="og:url" content="https://example.com/2026020801/">
+  <meta property="og:site_name" content="jim">
+  <meta property="og:title" content="PostgreSQL锁机制">
+  <meta property="og:description" content="#PostgreSQL中有两类锁：表级锁和行级锁。当要查询、插入、更新、删除表中数据时，首先要获得表级锁，然后获得行级锁。
+下面对PostgreSQL数据库锁机制的理解，大部分来自与《PostgreSQL修炼之道 从小工到专家》-唐成书中，以及网络上的博客的总结。通过实际测试发现，还是存在一些不合理的点，后面实际的案列中，会有一些说明。">
+  <meta property="og:locale" content="zh_CN">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="posts">
+    <meta property="article:published_time" content="2026-02-08T16:29:23+08:00">
+    <meta property="article:modified_time" content="2026-02-08T16:29:23+08:00">
+    <meta property="og:image" content="https://example.com/images/logo.png">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://example.com/images/logo.png">
+  <meta name="twitter:title" content="PostgreSQL锁机制">
+  <meta name="twitter:description" content="#PostgreSQL中有两类锁：表级锁和行级锁。当要查询、插入、更新、删除表中数据时，首先要获得表级锁，然后获得行级锁。
+下面对PostgreSQL数据库锁机制的理解，大部分来自与《PostgreSQL修炼之道 从小工到专家》-唐成书中，以及网络上的博客的总结。通过实际测试发现，还是存在一些不合理的点，后面实际的案列中，会有一些说明。">
+<meta name="application-name" content="LoveIt">
+<meta name="apple-mobile-web-app-title" content="LoveIt">
+<meta name="referrer" content="no-referrer" /><meta name="theme-color" content="#ffffff"><meta name="msapplication-TileColor" content="#da532c"><link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png"><link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png"><link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5"><link rel="manifest" href="/site.webmanifest"><link rel="canonical" href="https://example.com/2026020801/" /><link rel="prev" href="https://example.com/pg_dba/" /><link rel="next" href="https://example.com/2026020802/" /><link rel="stylesheet" href="/css/style.min.css"><link rel="preload" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.7.2/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+        <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.7.2/css/all.min.css"></noscript><link rel="preload" href="https://cdn.jsdelivr.net/npm/animate.css@4.1.1/animate.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+        <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@4.1.1/animate.min.css"></noscript><script type="application/ld+json">
+    {
+        "@context": "http://schema.org",
+        "@type": "BlogPosting",
+        "headline": "PostgreSQL锁机制",
+        "inLanguage": "zh-CN",
+        "mainEntityOfPage": {
+            "@type": "WebPage",
+            "@id": "https:\/\/example.com\/2026020801\/"
+        },"image": ["https:\/\/example.com\/images\/Apple-Devices-Preview.png"],"genre": "posts","wordcount":  3963 ,
+        "url": "https:\/\/example.com\/2026020801\/","datePublished": "2026-02-08T16:29:23+08:00","dateModified": "2026-02-08T16:29:23+08:00","license": "This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.","publisher": {
+            "@type": "Organization",
+            "name": "xxxx","logo": "https:\/\/example.com\/images\/avatar.png"},"author": {
+                "@type": "Person",
+                "name": "jim"
+            },"description": ""
+    }
+    </script></head>
+    <body data-header-desktop="fixed" data-header-mobile="auto"><script>
+          const query = window.matchMedia('(prefers-color-scheme: dark)');
+          function applyTheme() {
+            let theme = window.localStorage?.getItem('theme') || 'auto';
+            let isDark = theme === 'dark' || (theme === 'auto' && query.matches);
+            document.body.setAttribute('theme', isDark? 'dark' : 'light');
+            document.body.setAttribute('cfg-theme', theme);
+          }
+
+          applyTheme();
+          query.addEventListener('change', applyTheme);
+        </script>
+
+        <div id="mask"></div><div class="wrapper"><header class="desktop" id="header-desktop">
+    <div class="header-wrapper">
+        <div class="header-title">
+            <a href="/" title="jim"><span class="header-title-pre"><i class='far fa-kiss-wink-heart fa-fw' aria-hidden='true'></i></span>jim的个人博客</a>
+        </div>
+        <div class="menu">
+            <div class="menu-inner"><a class="menu-item" href="/posts/"> 所有文章 </a><a class="menu-item" href="/tags/"> 标签 </a><a class="menu-item" href="/categories/"> 分类 </a><a class="menu-item" href="/categories/documentation/"> 文档 </a><a class="menu-item" href="/about/"> 关于 </a><a class="menu-item" href="https://github.com/dillonzq/LoveIt" title="GitHub" rel="noopener noreffer" target="_blank"><i class='fab fa-github fa-fw' aria-hidden='true'></i>  </a><span class="menu-item delimiter"></span><span class="menu-item search" id="search-desktop">
+                        <input type="text" placeholder="搜索文章标题或内容..." id="search-input-desktop">
+                        <a href="javascript:void(0);" class="search-button search-toggle" id="search-toggle-desktop" title="搜索">
+                            <i class="fas fa-search fa-fw" aria-hidden="true"></i>
+                        </a>
+                        <a href="javascript:void(0);" class="search-button search-clear" id="search-clear-desktop" title="清空">
+                            <i class="fas fa-times-circle fa-fw" aria-hidden="true"></i>
+                        </a>
+                        <span class="search-button search-loading" id="search-loading-desktop">
+                            <i class="fas fa-spinner fa-fw fa-spin" aria-hidden="true"></i>
+                        </span>
+                    </span><a href="javascript:void(0);" class="menu-item theme-switch" title="切换主题">
+                    <i class="fas fa-adjust fa-fw" aria-hidden="true"></i>
+                </a><a href="javascript:void(0);" class="menu-item language" title="选择语言">
+                    <i class="fa fa-globe fa-fw" aria-hidden="true"></i>                      
+                    <select class="language-select" id="language-select-desktop" onchange="location = this.value;"><option value="/2026020801/" selected>简体中文</option></select>
+                </a></div>
+        </div>
+    </div>
+</header><header class="mobile" id="header-mobile">
+    <div class="header-container">
+        <div class="header-wrapper">
+            <div class="header-title">
+                <a href="/" title="jim"><span class="header-title-pre"><i class='far fa-kiss-wink-heart fa-fw' aria-hidden='true'></i></span>jim的个人博客</a>
+            </div>
+            <div class="menu-toggle" id="menu-toggle-mobile">
+                <span></span><span></span><span></span>
+            </div>
+        </div>
+        <div class="menu" id="menu-mobile"><div class="search-wrapper">
+                    <div class="search mobile" id="search-mobile">
+                        <input type="text" placeholder="搜索文章标题或内容..." id="search-input-mobile">
+                        <a href="javascript:void(0);" class="search-button search-toggle" id="search-toggle-mobile" title="搜索">
+                            <i class="fas fa-search fa-fw" aria-hidden="true"></i>
+                        </a>
+                        <a href="javascript:void(0);" class="search-button search-clear" id="search-clear-mobile" title="清空">
+                            <i class="fas fa-times-circle fa-fw" aria-hidden="true"></i>
+                        </a>
+                        <span class="search-button search-loading" id="search-loading-mobile">
+                            <i class="fas fa-spinner fa-fw fa-spin" aria-hidden="true"></i>
+                        </span>
+                    </div>
+                    <a href="javascript:void(0);" class="search-cancel" id="search-cancel-mobile">
+                        取消
+                    </a>
+                </div><a class="menu-item" href="/posts/" title="">所有文章</a><a class="menu-item" href="/tags/" title="">标签</a><a class="menu-item" href="/categories/" title="">分类</a><a class="menu-item" href="/categories/documentation/" title="">文档</a><a class="menu-item" href="/about/" title="">关于</a><a class="menu-item" href="https://github.com/dillonzq/LoveIt" title="GitHub" rel="noopener noreffer" target="_blank"><i class='fab fa-github fa-fw' aria-hidden='true'></i></a><a href="javascript:void(0);" class="menu-item theme-switch" title="切换主题">
+                <i class="fas fa-adjust fa-fw" aria-hidden="true"></i>
+            </a><a href="javascript:void(0);" class="menu-item" title="选择语言">
+                    <i class="fa fa-globe fa-fw" aria-hidden="true"></i>
+                    <select class="language-select" onchange="location = this.value;"><option value="/2026020801/" selected>简体中文</option></select>
+                </a></div>
+    </div>
+</header><div class="search-dropdown desktop">
+        <div id="search-dropdown-desktop"></div>
+    </div>
+    <div class="search-dropdown mobile">
+        <div id="search-dropdown-mobile"></div>
+    </div><main class="main">
+                <div class="container"><div class="toc" id="toc-auto">
+            <h2 class="toc-title">目录</h2>
+            <div class="toc-content" id="toc-content-auto"></div>
+        </div><article class="page single"><h1 class="single-title animate__animated animate__flipInX">PostgreSQL锁机制</h1><div class="post-meta">
+            <div class="post-meta-line"><span class="post-author"><a href="/" title="Author" rel="author" class="author"><i class="fas fa-user-circle fa-fw" aria-hidden="true"></i>jim</a></span></div>
+            <div class="post-meta-line"><i class="far fa-calendar-alt fa-fw" aria-hidden="true"></i>&nbsp;<time datetime="2026-02-08">2026-02-08</time>&nbsp;<i class="fas fa-pencil-alt fa-fw" aria-hidden="true"></i>&nbsp;约 3963 字&nbsp;
+                <i class="far fa-clock fa-fw" aria-hidden="true"></i>&nbsp;预计阅读 8 分钟&nbsp;<span id="/2026020801/" class="leancloud_visitors" data-flag-title="PostgreSQL锁机制">
+                        <i class="far fa-eye fa-fw" aria-hidden="true"></i>&nbsp;<span class=leancloud-visitors-count></span>&nbsp;次阅读
+                    </span>&nbsp;</div>
+        </div><div class="details toc" id="toc-static"  data-kept="">
+                <div class="details-summary toc-title">
+                    <span>目录</span>
+                    <span><i class="details-icon fas fa-angle-right" aria-hidden="true"></i></span>
+                </div>
+                <div class="details-content toc-content" id="toc-content-static"><nav id="TableOfContents"></nav></div>
+            </div><div class="content" id="content"><p>#PostgreSQL中有两类锁：表级锁和行级锁。当要查询、插入、更新、删除表中数据时，首先要获得表级锁，然后获得行级锁。</p>
+<p>下面对PostgreSQL数据库锁机制的理解，大部分来自与《PostgreSQL修炼之道 从小工到专家》-唐成书中，以及网络上的博客的总结。通过实际测试发现，还是存在一些不合理的点，后面实际的案列中，会有一些说明。</p>
+<p>1.表级锁模式</p>
+<table>
+  <thead>
+      <tr>
+          <th>锁模式</th>
+          <th>解释</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>Access Share</td>
+          <td>只与Access Exclusive锁模式冲突。</td>
+      </tr>
+      <tr>
+          <td>Access Share</td>
+          <td>查询命令（Select command）将会在它查询的表上获取Access Shared锁，一般地，任何一个对表上的只读查询操作都将获取这种类型锁。</td>
+      </tr>
+      <tr>
+          <td>Row Share</td>
+          <td>与Exclusive和Access Exclusive锁模式冲突。</td>
+      </tr>
+      <tr>
+          <td>Row Share</td>
+          <td>Select for update和Select for share命令将获得这种类型锁，并且所有被引用但没有for update 的表上会加上Access Shared锁。</td>
+      </tr>
+      <tr>
+          <td>Row Exclusive</td>
+          <td>与Share，Shared Row Exclusive，Exclusive，Access Exclusive模式冲突。</td>
+      </tr>
+      <tr>
+          <td>Row Exclusive</td>
+          <td>Update/Delete/Insert命令会在目标表上获得这种类型的锁，并且在其它被引用的表上加上Access Share锁，一般地，更改表数据的命令都将在这张表上获得Row Exclusive锁。</td>
+      </tr>
+      <tr>
+          <td>Share Update Exclusive</td>
+          <td>Share Update Exclusive，Share，Share Row Exclusive，Exclusive，Access exclusive模式冲突，这种模式保护一张表不被并发的模式更改和Vacuum。</td>
+      </tr>
+      <tr>
+          <td></td>
+          <td>Vacuum(without full)，Analyze 和 Create index concur-ently命令会获得这种类型锁。</td>
+      </tr>
+      <tr>
+          <td>Share</td>
+          <td>与Row Exclusive，Shared Update Exclusive，Share Row Exclusive，Exclusive，Access exclusive锁模式冲突，这种模式保护一张表数据不被并发的更改。</td>
+      </tr>
+      <tr>
+          <td>Share</td>
+          <td>Create index命令会获得这种锁模式。</td>
+      </tr>
+      <tr>
+          <td>Share Row Exclusive</td>
+          <td>与Row Exclusive，Share Update Exclusive，Shared，Shared Row Exclusive，Exclusive，Access Exclusive锁模式冲突。</td>
+      </tr>
+      <tr>
+          <td>Share Row Exclusive</td>
+          <td>任何PostgreSQL命令不会自动获得这种类型的锁。</td>
+      </tr>
+      <tr>
+          <td>Exclusive</td>
+          <td>与ROW Share , Row Exclusive, Share  Update  Exclusive, Share , Share  Row Exclusive, Exclusive, Access Exclusive模式冲突，这种锁模式仅能与Access Share 模式并发，换句话说，只有读操作可以和持有Exclusive锁的事务并行。</td>
+      </tr>
+      <tr>
+          <td>Exclusive</td>
+          <td>任何PostgreSQL命令不会自动获得这种类型的锁。</td>
+      </tr>
+      <tr>
+          <td>Access Exclusive</td>
+          <td>与所有模式锁冲突(Access Share，Row Share，Row Exclusive，Share  Update Exclusive，Share , Share Row Exclusive，Exclusive，Access Exclusive)，这种模式保证了当前只有一个人访问这张表；ALTER TABLE，DROP TABLE，TRUNCATE，REINDEX，CLUSTER，VACUUM FULL 命令会获得这种类型锁，在Lock table 命令中，如果没有申明其它模式，它也是默认模式。</td>
+      </tr>
+  </tbody>
+</table>
+<p>2.表级锁的冲突矩阵
+请求的锁模式</p>
+<table>
+  <thead>
+      <tr>
+          <th>请求的锁模式</th>
+          <th>&ldquo;Access Share&rdquo;</th>
+          <th>&ldquo;Row Share&rdquo;</th>
+          <th>&ldquo;Row Exclusive&rdquo;</th>
+          <th>&ldquo;Share Update Exclusive&rdquo;</th>
+          <th>Share</th>
+          <th>&ldquo;Share Row Exclusive&rdquo;</th>
+          <th>Exclusive</th>
+          <th>&ldquo;Access Exclusive&rdquo;</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>Access Share</td>
+          <td>Y</td>
+          <td>Y</td>
+          <td>Y</td>
+          <td>Y</td>
+          <td>Y</td>
+          <td>Y</td>
+          <td>Y</td>
+          <td>N</td>
+      </tr>
+      <tr>
+          <td>Row Share</td>
+          <td>Y</td>
+          <td>Y</td>
+          <td>Y</td>
+          <td>Y</td>
+          <td>Y</td>
+          <td>Y</td>
+          <td>N</td>
+          <td>N</td>
+      </tr>
+      <tr>
+          <td>Row Exclusive</td>
+          <td>Y</td>
+          <td>Y</td>
+          <td>Y</td>
+          <td>Y</td>
+          <td>N</td>
+          <td>N</td>
+          <td>N</td>
+          <td>N</td>
+      </tr>
+      <tr>
+          <td>Share Update Exclusive</td>
+          <td>Y</td>
+          <td>Y</td>
+          <td>Y</td>
+          <td>N</td>
+          <td>N</td>
+          <td>N</td>
+          <td>N</td>
+          <td>N</td>
+      </tr>
+      <tr>
+          <td>Share</td>
+          <td>Y</td>
+          <td>Y</td>
+          <td>Y</td>
+          <td>N</td>
+          <td>N</td>
+          <td>N</td>
+          <td>N</td>
+          <td>N</td>
+      </tr>
+      <tr>
+          <td>Share Row Exclusive</td>
+          <td>Y</td>
+          <td>Y</td>
+          <td>N</td>
+          <td>N</td>
+          <td>N</td>
+          <td>N</td>
+          <td>N</td>
+          <td>N</td>
+      </tr>
+      <tr>
+          <td>Exclusive</td>
+          <td>Y</td>
+          <td>N</td>
+          <td>N</td>
+          <td>N</td>
+          <td>N</td>
+          <td>N</td>
+          <td>N</td>
+          <td>N</td>
+      </tr>
+      <tr>
+          <td>Access Exclusive</td>
+          <td>N</td>
+          <td>N</td>
+          <td>N</td>
+          <td>N</td>
+          <td>N</td>
+          <td>N</td>
+          <td>N</td>
+          <td>N</td>
+      </tr>
+  </tbody>
+</table>
+<p>表中“N”表示这两种表冲突，也就是不同的进程不能同时持有这两种锁。</p>
+<p>最普通的是Share和Exclusive这两种锁，它们分别是读、写锁的意思。加了Share锁，即读锁，表的内容就不被修改了；可以为多个事务加上此锁，只要任意一个事务不释放这个读锁，则其他事务就不能修改这个表。加上了Exclusive，相当于加了写锁，这时别的进程不能写也不能读这条数据。但后来数据库又加上了多版本的功能。修改一条语句的同时，允许了读数据，为了处理这种情况，又增加了两种锁Access Share和Access Excusive，锁中的关键字 Access 是与多版本相关的有了该功能。其实，有了该功能后，如果修改一行数据，实际并没有改原先那行数据，而是复制了一个新行，修改都在新行上，事务不提交，其他人是看不到修改的这条数据的。由于旧行数据没有变化，在修改过程中，读数据的人仍然可以读到旧的数据。</p>
+<p>表级锁加锁对象是表，这使得加锁范围太大，导致并发并不高，于是人们提出了行级锁的概念，但行级锁与表级锁之间会产生冲突，这时需要一种机制来描述行级锁与表级锁之间的关系，有了意向锁的概念，这时又加了两种锁，即意向共享锁（Row Share） 和意向排他锁（Row Exclusive），由于意向锁之间不会产生冲突，因为他们是“有意”做，还没真做；而且意向排它锁相互之间也不会产生冲突，于是又需要更严格一些的锁，这样就产生了Share Update Exclusive，Share Row Exclusive可以看成Share与Row Exclusive，PostgreSQL不会自动请求这个锁模式，也就是PostgreSQL内部目前没有使用这种锁。</p>
+<p>这里稍微补充一下多版本并发控制原理。</p>
+<p>多版本并发控制原理：</p>
+<p>大家熟知的读与写锁是不能并发的，所以有人想到一种新的能够让读写并发的方法，称这种方法为MVCC。MVCC的方法是写数据时，旧版本的数据并不删除，并发的读操作还能读到旧版本的数据。</p>
+<p>实现MVCC的两种方法：</p>
+<p>写新数据时，把旧数据移到一个单独的地方，如回滚段中，其他读数据时，从回滚段中把旧版本数据读出来。
+写新数据时，旧版本的数据不删除，而是把新数据插入。
+PostgreSQL数据库使用的正是第二种方法，而oracle与MySQL中的innodb引擎用的是第一种方法。</p>
+<p>PostgreSQL实现该功能，需要在每张表上添加四个系统字段tmin、tmax、cmin、cmax，通过这四个字段可以区分并发时，记录不同数据的版本，和事务标识，当删除时，只会标记记录，而不会从数据块中删除，空间也没有立即释放。</p>
+<p>PostgreSQL通过运行vaccum进程来进行回收之前的存储空间，默认PostgreSQL中的autovacuum是打开的，当一表更新达到一定数量时，autovacuum会自动回收空间。</p>
+<p>3.表级锁类型对应的数据库操作
+锁类型</p>
+<p>对应的数据库操作</p>
+<p>Access Share</p>
+<p>select</p>
+<p>Row Share</p>
+<p>select for update, select for share</p>
+<p>Row Exclusive</p>
+<p>update，delete，insert</p>
+<p>Share Update Exclusive</p>
+<p>vacuum(without full)，analyze，create index concurrently</p>
+<p>Share</p>
+<p>create index</p>
+<p>Share Row Exclusive</p>
+<p>任何Postgresql命令不会自动获得这种类型的锁</p>
+<p>Exclusive</p>
+<p>任何Postgresql命令不会自动获得这种类型的锁</p>
+<p>Access Exclusive</p>
+<p>alter table，drop table，truncate，reindex，cluster，vacuum full</p>
+<p>4.行级锁模式
+行级锁模式只有两种，分别是共享锁和排他锁，或者说是读锁或写锁。由于多版本的实现，实际读取行数据时，并不会在行上执行任何锁。</p>
+<p>特定行上的行级锁是在行被更新的时候自动请求的（或者被删除时或标记为更新）。 锁一直保持到事务提交或者回滚。行级锁不影响对数据的查询；它们只阻塞对同一行的写入。 要在不修改某行的前提下请求在该行的行级锁，用 SELECT FOR UPDATE 选取该行。请注意一旦我们请求了特定的行级锁，那么该事务就可以多次对该行进行更新而不用担心冲突。</p>
+<p>《PostgreSQL修炼之道 从小工到专家》-唐成书中强调的是，行级锁只有共享锁与排他锁，也就是读锁、写锁，但是实际测试中有发现一些tuple类型的多版本控制的写锁。</p>
+<p>5.页级锁
+除了表级别的和行级别的锁以外， 页面级别的共享/排他销也用于控制对共享缓冲池中表页面的读/写访问。这些锁在抓取或者更新一行后马上被释放。应用程序员通常不需要关心页级锁，在这里提到它们只是为了完整。</p>
+<p>6.锁命令
+1.表级锁命令</p>
+<p>在PsotgreSQL中，显示的在表上加锁命令为LOCK TABLE命令：</p>
+<p>LOCK [ TABLE ] [ ONLY ] name [ * ] [, &hellip;] [ IN lockmode MODE ] [ NOWAIT ]</p>
+<p>说明如下：</p>
+<p>name：要锁定的现有表的锁名称(可选模式限定)。 如果在表名之前指定ONLY，则仅该表被锁定，如果未指定ONLY，则表及其所有后代表(如果有)被锁定。
+lock_mode：锁模式指定此锁与之冲突的锁。 如果未指定锁定模式，则使用最严格的访问模式ACCESS EXCLUSIVE。
+NOWAIT：如果没有NOWAIT关键字时，当无法获得锁时，会一直等待，而如果加了NOWAIT关键字，在无法立即获取该锁时，此命令会立即退出并发出一个错误信息
+2.行级锁命令</p>
+<p>在PsotgreSQL中，显示的行级锁命令是由select命令发出的：</p>
+<p>SELECT …… FOR  { UPDATE | SHARE } [OF table_name[,……]] [ NOWAIT]</p>
+<p>说明如下：</p>
+<p>指定 OF table_name，则只有被指定的表会被锁定。
+例外情况，主查询中引用了WITH查询时，WITH查询中的表不被锁定。
+如果需要锁定WITH查询中的表，需在WITH查询内指定FOR UPDATA或FOR SHARE。
+NOWAIT关键字与显示加表级锁命令作用一样。
+7.死锁
+死锁是指两个或者两个以上的事务在执行过程中相互持有对方期待的资源，若没有其他机制，它们将无法进行下去。</p>
+<p>1.形成死锁的4个必要条件</p>
+<p>请求与保持条件：获取资源的进程可以同时申请新的资源。
+非剥夺条件：已经分配的资源不能从该进程中剥夺。
+循环等待条件：多个进程构成环路，并且每个进程都在等待相邻进程正占用的资源。
+互斥条件：资源只能被一个进程使用。
+2.减少死锁的方法</p>
+<p>在所有事务中都以相同的次序使用资源。
+使事务尽可能简单并在一个批处理中。
+为死锁超时参数设置一个合理范围，如10s；超时则自动放弃本操作，避免进程挂起。可以在postgresql.conf文件中设置：log_lock_waits = on         deadlock_timeout = 10s
+避免在事务内核用户进行交互，减少资源的锁定时间。
+使用较低的隔离级别，相比较高的隔离级别能够有效减少持有共享锁的时间，减少锁之间的竞争。
+打</p>
+</div><div class="post-footer" id="post-footer">
+    <div class="post-info">
+        <div class="post-info-line">
+            <div class="post-info-mod">
+                <span>更新于 2026-02-08</span>
+            </div></div>
+        <div class="post-info-line">
+            <div class="post-info-md"><span>
+                            <a class="link-to-markdown" href="/2026020801/index.md" target="_blank">阅读原始文档</a>
+                        </span></div>
+            <div class="post-info-share">
+                <span><a href="javascript:void(0);" title="分享到 X" data-sharer="x" data-url="https://example.com/2026020801/" data-title="PostgreSQL锁机制"><i class="fab fa-x-twitter fa-fw" aria-hidden="true"></i></a><a href="javascript:void(0);" title="分享到 Threads" data-sharer="threads" data-url="https://example.com/2026020801/" data-title="PostgreSQL锁机制"><i class="fab fa-threads fa-fw" aria-hidden="true"></i></a><a href="javascript:void(0);" title="分享到 Facebook" data-sharer="facebook" data-url="https://example.com/2026020801/"><i class="fab fa-facebook-square fa-fw" aria-hidden="true"></i></a><a href="javascript:void(0);" title="分享到 Hacker News" data-sharer="hackernews" data-url="https://example.com/2026020801/" data-title="PostgreSQL锁机制"><i class="fab fa-hacker-news fa-fw" aria-hidden="true"></i></a><a href="javascript:void(0);" title="分享到 Line" data-sharer="line" data-url="https://example.com/2026020801/" data-title="PostgreSQL锁机制"><i data-svg-src="https://cdn.jsdelivr.net/npm/simple-icons@15.14.0/icons/line.svg" aria-hidden="true"></i></a><a href="javascript:void(0);" title="分享到 微博" data-sharer="weibo" data-url="https://example.com/2026020801/" data-title="PostgreSQL锁机制" data-ralateuid="xxxx"><i class="fab fa-weibo fa-fw" aria-hidden="true"></i></a><a href="javascript:void(0);" title="分享到 Diaspora" data-sharer="diaspora" data-url="https://example.com/2026020801/" data-title="PostgreSQL锁机制" data-description=""><i class="fab fa-diaspora fa-fw" aria-hidden="true"></i></a><a href="https://t.me/share/url?url=https%3a%2f%2fexample.com%2f2026020801%2f&amp;text=PostgreSQL%e9%94%81%e6%9c%ba%e5%88%b6" target="_blank" title="分享到 Telegram"><i class="fab fa-telegram fa-fw" aria-hidden="true"></i></a></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="post-info-more">
+        <section class="post-tags"></section>
+        <section>
+            <span><a href="javascript:void(0);" onclick="window.history.back();">返回</a></span>&nbsp;|&nbsp;<span><a href="/">主页</a></span>
+        </section>
+    </div>
+
+    <div class="post-nav"><a href="/pg_dba/" class="prev" rel="prev" title="PG_DBA_运维手册"><i class="fas fa-angle-left fa-fw" aria-hidden="true"></i>PG_DBA_运维手册</a>
+            <a href="/2026020802/" class="next" rel="next" title="postggresq备份脚本">postggresq备份脚本<i class="fas fa-angle-right fa-fw" aria-hidden="true"></i></a></div>
+</div>
+<div id="comments"><div id="valine" class="comment"></div><noscript>
+                Please enable JavaScript to view the comments powered by <a href="https://valine.js.org/">Valine</a>.
+            </noscript></div></article></div>
+            </main><footer class="footer">
+        <div class="footer-container"><div class="footer-line">由 <a href="https://gohugo.io/" target="_blank" rel="noopener noreffer" title="Hugo 0.145.0">Hugo</a> 强力驱动 | 主题 - <a href="https://github.com/dillonzq/LoveIt" target="_blank" rel="noopener noreffer" title="LoveIt 0.3.1-DEV"><i class="far fa-kiss-wink-heart fa-fw" aria-hidden="true"></i> LoveIt</a>
+                </div><div class="footer-line" itemscope itemtype="http://schema.org/CreativeWork"><i class="far fa-copyright fa-fw" aria-hidden="true"></i><span itemprop="copyrightYear">2019 - 2026</span><span class="author" itemprop="copyrightHolder">&nbsp;<a href="/" target="_blank">jim</a></span>&nbsp;|&nbsp;<span class="license"><a rel="license external nofollow noopener noreffer" href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank">CC BY-NC 4.0</a></span></div>
+        </div>
+    </footer></div>
+
+        <div id="fixed-buttons"><a href="#" id="back-to-top" class="fixed-button" title="回到顶部">
+                <i class="fas fa-arrow-up fa-fw" aria-hidden="true"></i>
+            </a>
+        </div>
+
+        <div id="fixed-buttons-hidden"><a href="#" id="view-comments" class="fixed-button" title="查看评论">
+                <i class="fas fa-comment fa-fw" aria-hidden="true"></i>
+            </a>
+        </div><link rel="stylesheet" href="/lib/valine/valine.min.css"><script src="https://cdn.jsdelivr.net/npm/valine@1.5.3/dist/Valine.min.js"></script><script src="https://cdn.jsdelivr.net/npm/autocomplete.js@0.38.1/dist/autocomplete.min.js"></script><script src="https://cdn.jsdelivr.net/npm/algoliasearch@5.20.2/dist/lite/builds/browser.umd.min.js"></script><script src="https://cdn.jsdelivr.net/npm/lazysizes@5.3.2/lazysizes.min.js"></script><script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.11/dist/clipboard.min.js"></script><script src="https://cdn.jsdelivr.net/npm/sharer.js@0.5.2/sharer.min.js"></script><script>window.config={"comment":{"valine":{"appId":"QGzwQXOqs5JOhN4RGPOkR2mR-MdYXbMMI","appKey":"WBmoGyJtbqUswvfLh6L8iEBr","avatar":"mp","el":"#valine","emojiCDN":"https://cdn.jsdelivr.net/npm/emoji-datasource-google@15.1.2/img/google/64/","emojiMaps":{"100":"1f4af.png","alien":"1f47d.png","anger":"1f4a2.png","angry":"1f620.png","anguished":"1f627.png","astonished":"1f632.png","black_heart":"1f5a4.png","blue_heart":"1f499.png","blush":"1f60a.png","bomb":"1f4a3.png","boom":"1f4a5.png","broken_heart":"1f494.png","brown_heart":"1f90e.png","clown_face":"1f921.png","cold_face":"1f976.png","cold_sweat":"1f630.png","confounded":"1f616.png","confused":"1f615.png","cry":"1f622.png","crying_cat_face":"1f63f.png","cupid":"1f498.png","dash":"1f4a8.png","disappointed":"1f61e.png","disappointed_relieved":"1f625.png","dizzy":"1f4ab.png","dizzy_face":"1f635.png","drooling_face":"1f924.png","exploding_head":"1f92f.png","expressionless":"1f611.png","face_vomiting":"1f92e.png","face_with_cowboy_hat":"1f920.png","face_with_hand_over_mouth":"1f92d.png","face_with_head_bandage":"1f915.png","face_with_monocle":"1f9d0.png","face_with_raised_eyebrow":"1f928.png","face_with_rolling_eyes":"1f644.png","face_with_symbols_on_mouth":"1f92c.png","face_with_thermometer":"1f912.png","fearful":"1f628.png","flushed":"1f633.png","frowning":"1f626.png","ghost":"1f47b.png","gift_heart":"1f49d.png","green_heart":"1f49a.png","grimacing":"1f62c.png","grin":"1f601.png","grinning":"1f600.png","hankey":"1f4a9.png","hear_no_evil":"1f649.png","heart":"2764-fe0f.png","heart_decoration":"1f49f.png","heart_eyes":"1f60d.png","heart_eyes_cat":"1f63b.png","heartbeat":"1f493.png","heartpulse":"1f497.png","heavy_heart_exclamation_mark_ornament":"2763-fe0f.png","hole":"1f573-fe0f.png","hot_face":"1f975.png","hugging_face":"1f917.png","hushed":"1f62f.png","imp":"1f47f.png","innocent":"1f607.png","japanese_goblin":"1f47a.png","japanese_ogre":"1f479.png","joy":"1f602.png","joy_cat":"1f639.png","kiss":"1f48b.png","kissing":"1f617.png","kissing_cat":"1f63d.png","kissing_closed_eyes":"1f61a.png","kissing_heart":"1f618.png","kissing_smiling_eyes":"1f619.png","laughing":"1f606.png","left_speech_bubble":"1f5e8-fe0f.png","love_letter":"1f48c.png","lying_face":"1f925.png","mask":"1f637.png","money_mouth_face":"1f911.png","nauseated_face":"1f922.png","nerd_face":"1f913.png","neutral_face":"1f610.png","no_mouth":"1f636.png","open_mouth":"1f62e.png","orange_heart":"1f9e1.png","partying_face":"1f973.png","pensive":"1f614.png","persevere":"1f623.png","pleading_face":"1f97a.png","pouting_cat":"1f63e.png","purple_heart":"1f49c.png","rage":"1f621.png","relaxed":"263a-fe0f.png","relieved":"1f60c.png","revolving_hearts":"1f49e.png","right_anger_bubble":"1f5ef-fe0f.png","robot_face":"1f916.png","rolling_on_the_floor_laughing":"1f923.png","scream":"1f631.png","scream_cat":"1f640.png","see_no_evil":"1f648.png","shushing_face":"1f92b.png","skull":"1f480.png","skull_and_crossbones":"2620-fe0f.png","sleeping":"1f634.png","sleepy":"1f62a.png","slightly_frowning_face":"1f641.png","slightly_smiling_face":"1f642.png","smile":"1f604.png","smile_cat":"1f638.png","smiley":"1f603.png","smiley_cat":"1f63a.png","smiling_face_with_3_hearts":"1f970.png","smiling_imp":"1f608.png","smirk":"1f60f.png","smirk_cat":"1f63c.png","sneezing_face":"1f927.png","sob":"1f62d.png","space_invader":"1f47e.png","sparkling_heart":"1f496.png","speak_no_evil":"1f64a.png","speech_balloon":"1f4ac.png","star-struck":"1f929.png","stuck_out_tongue":"1f61b.png","stuck_out_tongue_closed_eyes":"1f61d.png","stuck_out_tongue_winking_eye":"1f61c.png","sunglasses":"1f60e.png","sweat":"1f613.png","sweat_drops":"1f4a6.png","sweat_smile":"1f605.png","thinking_face":"1f914.png","thought_balloon":"1f4ad.png","tired_face":"1f62b.png","triumph":"1f624.png","two_hearts":"1f495.png","unamused":"1f612.png","upside_down_face":"1f643.png","weary":"1f629.png","white_frowning_face":"2639-fe0f.png","white_heart":"1f90d.png","wink":"1f609.png","woozy_face":"1f974.png","worried":"1f61f.png","yawning_face":"1f971.png","yellow_heart":"1f49b.png","yum":"1f60b.png","zany_face":"1f92a.png","zipper_mouth_face":"1f910.png","zzz":"1f4a4.png"},"enableQQ":false,"highlight":true,"lang":"zh-CN","pageSize":10,"placeholder":"你的评论 ...","recordIP":true,"serverURLs":"https://valine.hugoloveit.com","visitor":true}},"search":{"algoliaAppID":"GZT24PWKNT","algoliaIndex":"index","algoliaSearchKey":"634ab679e825b815de2663de38908f9d","highlightTag":"em","maxResultLength":10,"noResultsFound":"没有找到结果","snippetLength":50,"type":"algolia"}};</script><script src="/js/theme.min.js"></script></body>
+</html>
