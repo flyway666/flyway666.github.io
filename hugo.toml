@@ -587,10 +587,10 @@ ignoreErrors = ["error-remote-getjson", "error-missing-instagram-accesstoken"]
         # You can refer to the official documentation of giscus to use the following configuration.
         # 你可以参考官方文档来使用下列配置
         enable = true
-        repo = "flyway666/Giscus"
-        repoId = "R_kgDORLTjAQ"
+        repo = "flyway666/flyway666.github.io"
+        repoId = "R_kgDORLQ65w"
         category = "Announcements"
-        categoryId = "DIC_kwDORLTjAc4C2CmS"
+        categoryId = "DIC_kwDORLQ6584C2CpW"
         # automatically adapt the current theme i18n configuration when empty
         # 为空时自动适配当前主题 i18n 配置
         lang = ""
@@ -598,7 +598,7 @@ ignoreErrors = ["error-remote-getjson", "error-missing-instagram-accesstoken"]
         reactionsEnabled = "1"
         emitMetadata = "0"
         inputPosition = "bottom"
-        lazyLoading = false
+        lazyLoading = true
         lightTheme = "light"
         darkTheme = "dark"
       # Waline comment config (https://waline.js.org/)
