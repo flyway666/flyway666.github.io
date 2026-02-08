@@ -3,5 +3,13 @@
         <title>Categories - 分类 - jim</title>
         <link>https://example.com/categories/</link>
         <description>Categories - 分类 - jim</description>
-        <generator>Hugo -- gohugo.io</generator><language>zh-CN</language><copyright>This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.</copyright><atom:link href="https://example.com/categories/" rel="self" type="application/rss+xml" /></channel>
+        <generator>Hugo -- gohugo.io</generator><language>zh-CN</language><copyright>This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.</copyright><lastBuildDate>Sun, 08 Feb 2026 16:33:14 &#43;0800</lastBuildDate><atom:link href="https://example.com/categories/" rel="self" type="application/rss+xml" /><item>
+    <title>技術--PostgreSQL</title>
+    <link>https://example.com/categories/%E6%8A%80%E8%A1%93--postgresql/</link>
+    <pubDate>Sun, 08 Feb 2026 16:33:14 &#43;0800</pubDate>
+    <author>jim</author>
+    <guid>https://example.com/categories/%E6%8A%80%E8%A1%93--postgresql/</guid>
+    <description><![CDATA[]]></description>
+</item>
+</channel>
 </rss>

@@ -2,6 +2,8 @@
 date = '2026-02-08T12:18:39+08:00'
 draft = false
 title = 'PG_DBA_运维手册'
+categories = ["技術--PostgreSQL"]
+tags = ["PostgreSQL", "資料庫"]
 +++
 
 # PG_DBA_运维手册

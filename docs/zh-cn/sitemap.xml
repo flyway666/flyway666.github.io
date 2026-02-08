@@ -2,23 +2,7 @@
     xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
     xmlns:xhtml="http://www.w3.org/1999/xhtml"
     ><url>
-            <loc>https://example.com/</loc><lastmod>2026-02-08T16:33:14&#43;08:00</lastmod><changefreq>weekly</changefreq><priority>1</priority><xhtml:link
-                        rel="alternate"
-                        hreflang="en"
-                        href="https://example.com/en/"
-                        /><xhtml:link
-                    rel="alternate"
-                    hreflang="zh-cn"
-                    href="https://example.com/"
-                    /></url><url>
-            <loc>https://example.com/2026020805/</loc><lastmod>2026-02-08T16:33:14&#43;08:00</lastmod><changefreq>weekly</changefreq><priority>1</priority></url><url>
-            <loc>https://example.com/posts/</loc><lastmod>2026-02-08T16:33:14&#43;08:00</lastmod><changefreq>weekly</changefreq><priority>1</priority></url><url>
-            <loc>https://example.com/2026020804/</loc><lastmod>2026-02-08T16:33:11&#43;08:00</lastmod><changefreq>weekly</changefreq><priority>1</priority></url><url>
-            <loc>https://example.com/2026020803/</loc><lastmod>2026-02-08T16:33:07&#43;08:00</lastmod><changefreq>weekly</changefreq><priority>1</priority></url><url>
-            <loc>https://example.com/2026020802/</loc><lastmod>2026-02-08T16:31:39&#43;08:00</lastmod><changefreq>weekly</changefreq><priority>1</priority></url><url>
-            <loc>https://example.com/2026020801/</loc><lastmod>2026-02-08T16:29:23&#43;08:00</lastmod><changefreq>weekly</changefreq><priority>1</priority></url><url>
-            <loc>https://example.com/pg_dba/</loc><lastmod>2026-02-08T16:14:15&#43;08:00</lastmod><changefreq>weekly</changefreq><priority>1</priority></url><url>
-            <loc>https://example.com/categories/</loc><changefreq>weekly</changefreq><priority>0.5</priority><xhtml:link
+            <loc>https://example.com/categories/</loc><lastmod>2026-02-08T16:41:15&#43;08:00</lastmod><changefreq>weekly</changefreq><priority>1</priority><xhtml:link
                         rel="alternate"
                         hreflang="en"
                         href="https://example.com/en/categories/"
@@ -27,7 +11,19 @@
                     hreflang="zh-cn"
                     href="https://example.com/categories/"
                     /></url><url>
-            <loc>https://example.com/tags/</loc><changefreq>weekly</changefreq><priority>0.5</priority><xhtml:link
+            <loc>https://example.com/</loc><lastmod>2026-02-08T16:41:15&#43;08:00</lastmod><changefreq>weekly</changefreq><priority>1</priority><xhtml:link
+                        rel="alternate"
+                        hreflang="en"
+                        href="https://example.com/en/"
+                        /><xhtml:link
+                    rel="alternate"
+                    hreflang="zh-cn"
+                    href="https://example.com/"
+                    /></url><url>
+            <loc>https://example.com/2026020805/</loc><lastmod>2026-02-08T16:41:15&#43;08:00</lastmod><changefreq>weekly</changefreq><priority>1</priority></url><url>
+            <loc>https://example.com/tags/postgresql/</loc><lastmod>2026-02-08T16:41:15&#43;08:00</lastmod><changefreq>weekly</changefreq><priority>1</priority></url><url>
+            <loc>https://example.com/posts/</loc><lastmod>2026-02-08T16:41:15&#43;08:00</lastmod><changefreq>weekly</changefreq><priority>1</priority></url><url>
+            <loc>https://example.com/tags/</loc><lastmod>2026-02-08T16:41:15&#43;08:00</lastmod><changefreq>weekly</changefreq><priority>1</priority><xhtml:link
                         rel="alternate"
                         hreflang="en"
                         href="https://example.com/en/tags/"
@@ -35,4 +31,11 @@
                     rel="alternate"
                     hreflang="zh-cn"
                     href="https://example.com/tags/"
-                    /></url></urlset>
+                    /></url><url>
+            <loc>https://example.com/categories/%E6%8A%80%E8%A1%93--postgresql/</loc><lastmod>2026-02-08T16:41:15&#43;08:00</lastmod><changefreq>weekly</changefreq><priority>1</priority></url><url>
+            <loc>https://example.com/tags/%E8%B3%87%E6%96%99%E5%BA%AB/</loc><lastmod>2026-02-08T16:41:15&#43;08:00</lastmod><changefreq>weekly</changefreq><priority>1</priority></url><url>
+            <loc>https://example.com/2026020804/</loc><lastmod>2026-02-08T16:41:15&#43;08:00</lastmod><changefreq>weekly</changefreq><priority>1</priority></url><url>
+            <loc>https://example.com/2026020803/</loc><lastmod>2026-02-08T16:41:15&#43;08:00</lastmod><changefreq>weekly</changefreq><priority>1</priority></url><url>
+            <loc>https://example.com/2026020802/</loc><lastmod>2026-02-08T16:41:15&#43;08:00</lastmod><changefreq>weekly</changefreq><priority>1</priority></url><url>
+            <loc>https://example.com/2026020801/</loc><lastmod>2026-02-08T16:41:15&#43;08:00</lastmod><changefreq>weekly</changefreq><priority>1</priority></url><url>
+            <loc>https://example.com/pg_dba/</loc><lastmod>2026-02-08T16:14:15&#43;08:00</lastmod><changefreq>weekly</changefreq><priority>1</priority></url></urlset>

@@ -1,11 +1,9 @@
 <rss xmlns:atom="http://www.w3.org/2005/Atom" version="2.0">
     <channel>
-        <title>jim</title>
-        <link>https://example.com/</link>
-        <description>Hugo theme - LoveIt</description>
-        <generator>Hugo -- gohugo.io</generator><language>zh-CN</language><copyright>This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.</copyright><lastBuildDate>Sun, 08 Feb 2026 16:33:14 &#43;0800</lastBuildDate>
-            <atom:link href="https://example.com/index.xml" rel="self" type="application/rss+xml" />
-        <item>
+        <title>技術--PostgreSQL - 分类 - jim</title>
+        <link>https://example.com/categories/%E6%8A%80%E8%A1%93--postgresql/</link>
+        <description>技術--PostgreSQL - 分类 - jim</description>
+        <generator>Hugo -- gohugo.io</generator><language>zh-CN</language><copyright>This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.</copyright><lastBuildDate>Sun, 08 Feb 2026 16:33:14 &#43;0800</lastBuildDate><atom:link href="https://example.com/categories/%E6%8A%80%E8%A1%93--postgresql/" rel="self" type="application/rss+xml" /><item>
     <title>pg使用触发器记录ddl</title>
     <link>https://example.com/2026020805/</link>
     <pubDate>Sun, 08 Feb 2026 16:33:14 &#43;0800</pubDate>
