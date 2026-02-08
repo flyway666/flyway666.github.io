@@ -1,4 +1,4 @@
-baseURL = "https://example.com"
+baseURL = "https://blog.flyway.us.ci"
 
 publishDir = "docs"          # 输入html文件位置
 cleanDestinationDir = true # 每次构建自动清理旧文件，避免残留
