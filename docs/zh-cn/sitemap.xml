@@ -2,40 +2,41 @@
     xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
     xmlns:xhtml="http://www.w3.org/1999/xhtml"
     ><url>
-            <loc>http://localhost:1313/categories/</loc><lastmod>2026-02-08T16:55:39&#43;08:00</lastmod><changefreq>weekly</changefreq><priority>1</priority><xhtml:link
+            <loc>https://blog.flyway.us.ci/</loc><lastmod>2026-03-07T11:08:09&#43;08:00</lastmod><changefreq>weekly</changefreq><priority>1</priority><xhtml:link
                         rel="alternate"
                         hreflang="en"
-                        href="http://localhost:1313/en/categories/"
+                        href="https://blog.flyway.us.ci/en/"
                         /><xhtml:link
                     rel="alternate"
                     hreflang="zh-cn"
-                    href="http://localhost:1313/categories/"
+                    href="https://blog.flyway.us.ci/"
                     /></url><url>
-            <loc>http://localhost:1313/</loc><lastmod>2026-02-08T16:55:39&#43;08:00</lastmod><changefreq>weekly</changefreq><priority>1</priority><xhtml:link
+            <loc>https://blog.flyway.us.ci/posts/</loc><lastmod>2026-03-07T11:08:09&#43;08:00</lastmod><changefreq>weekly</changefreq><priority>1</priority></url><url>
+            <loc>https://blog.flyway.us.ci/2026030701/</loc><lastmod>2026-03-07T11:08:09&#43;08:00</lastmod><changefreq>weekly</changefreq><priority>1</priority></url><url>
+            <loc>https://blog.flyway.us.ci/categories/</loc><lastmod>2026-02-08T16:55:39&#43;08:00</lastmod><changefreq>weekly</changefreq><priority>0.7</priority><xhtml:link
                         rel="alternate"
                         hreflang="en"
-                        href="http://localhost:1313/en/"
+                        href="https://blog.flyway.us.ci/en/categories/"
                         /><xhtml:link
                     rel="alternate"
                     hreflang="zh-cn"
-                    href="http://localhost:1313/"
+                    href="https://blog.flyway.us.ci/categories/"
                     /></url><url>
-            <loc>http://localhost:1313/2026020805/</loc><lastmod>2026-02-08T16:55:39&#43;08:00</lastmod><changefreq>weekly</changefreq><priority>1</priority></url><url>
-            <loc>http://localhost:1313/tags/postgresql/</loc><lastmod>2026-02-08T16:55:39&#43;08:00</lastmod><changefreq>weekly</changefreq><priority>1</priority></url><url>
-            <loc>http://localhost:1313/posts/</loc><lastmod>2026-02-08T16:55:39&#43;08:00</lastmod><changefreq>weekly</changefreq><priority>1</priority></url><url>
-            <loc>http://localhost:1313/tags/</loc><lastmod>2026-02-08T16:55:39&#43;08:00</lastmod><changefreq>weekly</changefreq><priority>1</priority><xhtml:link
+            <loc>https://blog.flyway.us.ci/2026020805/</loc><lastmod>2026-02-08T16:55:39&#43;08:00</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url><url>
+            <loc>https://blog.flyway.us.ci/tags/postgresql/</loc><lastmod>2026-02-08T16:55:39&#43;08:00</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url><url>
+            <loc>https://blog.flyway.us.ci/tags/</loc><lastmod>2026-02-08T16:55:39&#43;08:00</lastmod><changefreq>weekly</changefreq><priority>0.7</priority><xhtml:link
                         rel="alternate"
                         hreflang="en"
-                        href="http://localhost:1313/en/tags/"
+                        href="https://blog.flyway.us.ci/en/tags/"
                         /><xhtml:link
                     rel="alternate"
                     hreflang="zh-cn"
-                    href="http://localhost:1313/tags/"
+                    href="https://blog.flyway.us.ci/tags/"
                     /></url><url>
-            <loc>http://localhost:1313/categories/%E6%8A%80%E8%A1%93--postgresql/</loc><lastmod>2026-02-08T16:55:39&#43;08:00</lastmod><changefreq>weekly</changefreq><priority>1</priority></url><url>
-            <loc>http://localhost:1313/tags/%E8%B3%87%E6%96%99%E5%BA%AB/</loc><lastmod>2026-02-08T16:55:39&#43;08:00</lastmod><changefreq>weekly</changefreq><priority>1</priority></url><url>
-            <loc>http://localhost:1313/2026020804/</loc><lastmod>2026-02-08T16:55:39&#43;08:00</lastmod><changefreq>weekly</changefreq><priority>1</priority></url><url>
-            <loc>http://localhost:1313/2026020803/</loc><lastmod>2026-02-08T16:55:39&#43;08:00</lastmod><changefreq>weekly</changefreq><priority>1</priority></url><url>
-            <loc>http://localhost:1313/2026020802/</loc><lastmod>2026-02-08T16:55:39&#43;08:00</lastmod><changefreq>weekly</changefreq><priority>1</priority></url><url>
-            <loc>http://localhost:1313/2026020801/</loc><lastmod>2026-02-08T16:55:39&#43;08:00</lastmod><changefreq>weekly</changefreq><priority>1</priority></url><url>
-            <loc>http://localhost:1313/pg_dba/</loc><lastmod>2026-02-08T16:55:39&#43;08:00</lastmod><changefreq>weekly</changefreq><priority>1</priority></url></urlset>
+            <loc>https://blog.flyway.us.ci/categories/%E6%8A%80%E8%A1%93--postgresql/</loc><lastmod>2026-02-08T16:55:39&#43;08:00</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url><url>
+            <loc>https://blog.flyway.us.ci/tags/%E8%B3%87%E6%96%99%E5%BA%AB/</loc><lastmod>2026-02-08T16:55:39&#43;08:00</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url><url>
+            <loc>https://blog.flyway.us.ci/2026020804/</loc><lastmod>2026-02-08T16:55:39&#43;08:00</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url><url>
+            <loc>https://blog.flyway.us.ci/2026020803/</loc><lastmod>2026-02-08T16:55:39&#43;08:00</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url><url>
+            <loc>https://blog.flyway.us.ci/2026020802/</loc><lastmod>2026-02-08T16:55:39&#43;08:00</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url><url>
+            <loc>https://blog.flyway.us.ci/2026020801/</loc><lastmod>2026-02-08T16:55:39&#43;08:00</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url><url>
+            <loc>https://blog.flyway.us.ci/pg_dba/</loc><lastmod>2026-02-08T16:55:39&#43;08:00</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url></urlset>
