@@ -2,7 +2,7 @@
     xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
     xmlns:xhtml="http://www.w3.org/1999/xhtml"
     ><url>
-            <loc>https://blog.flyway.us.ci/</loc><lastmod>2026-03-07T11:08:09&#43;08:00</lastmod><changefreq>weekly</changefreq><priority>1</priority><xhtml:link
+            <loc>https://blog.flyway.us.ci/</loc><lastmod>2026-03-07T11:16:25&#43;08:00</lastmod><changefreq>weekly</changefreq><priority>1</priority><xhtml:link
                         rel="alternate"
                         hreflang="en"
                         href="https://blog.flyway.us.ci/en/"
@@ -11,8 +11,8 @@
                     hreflang="zh-cn"
                     href="https://blog.flyway.us.ci/"
                     /></url><url>
-            <loc>https://blog.flyway.us.ci/posts/</loc><lastmod>2026-03-07T11:08:09&#43;08:00</lastmod><changefreq>weekly</changefreq><priority>1</priority></url><url>
-            <loc>https://blog.flyway.us.ci/2026030701/</loc><lastmod>2026-03-07T11:08:09&#43;08:00</lastmod><changefreq>weekly</changefreq><priority>1</priority></url><url>
+            <loc>https://blog.flyway.us.ci/posts/</loc><lastmod>2026-03-07T11:16:25&#43;08:00</lastmod><changefreq>weekly</changefreq><priority>1</priority></url><url>
+            <loc>https://blog.flyway.us.ci/2026030701/</loc><lastmod>2026-03-07T11:16:25&#43;08:00</lastmod><changefreq>weekly</changefreq><priority>1</priority></url><url>
             <loc>https://blog.flyway.us.ci/categories/</loc><lastmod>2026-02-08T16:55:39&#43;08:00</lastmod><changefreq>weekly</changefreq><priority>0.7</priority><xhtml:link
                         rel="alternate"
                         hreflang="en"

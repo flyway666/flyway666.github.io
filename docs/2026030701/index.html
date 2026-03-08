@@ -7,22 +7,20 @@
         <title>使用盒子优选ip并上传到github - jim</title><meta name="Description" content="Hugo theme - LoveIt"><meta property="og:url" content="https://blog.flyway.us.ci/2026030701/">
   <meta property="og:site_name" content="jim">
   <meta property="og:title" content="使用盒子优选ip并上传到github">
-  <meta property="og:description" content="前提是在盒子中安装好git 和测速软件 https://github.com/XIU2/CloudflareSpeedTest
-然后使用如下脚本即可测速，并且把IP上传到github
-#!/bin/bash # 1. 进入工作目录 cd /opt/data/cloudflarespeedtest || { echo &#34;Directory not found&#34;; exit 1; } # 定义日志函数 log() { local message=&#34;$(date &#39;&#43;%Y-%m-%d %H:%M:%S&#39;) - $1&#34; echo &#34;$message&#34; } csv_file=&#34;result.csv&#34; output_ip_file=&#34;youxuanip.txt&#34; log &#34;Start Cloudflare speed test (SL: 3MB, TL: 400ms)...&#34; # --- 修正测速命令：删除重复 -url，保留您的参数 --- ./cfst -url https://cdn.cloudflare.steamstatic.com/steam/apps/256843155/movie_max.mp4 -sl 3 -tl 500 -dn 10 # 检查测速结果 if [ ! -s &#34;$csv_file&#34; ]; then log &#34;Error: Speed test failed, $csv_file is empty.&#34; exit 1 fi log &#34;Test finished. Extracting all 10 best IPs...&#34; # --- 核心修改：提取全部 10 个优选 IP（跳过第一行表头） --- # tail -n &#43;2 表示从第2行开始读取到最后 best_ips=$(tail -n &#43;2 &#34;$csv_file&#34; | cut -d&#39;,&#39; -f1) if [ -n &#34;$best_ips&#34; ]; then # 将所有 IP 写入本地文件（覆盖模式） echo &#34;$best_ips&#34; &gt; &#34;$output_ip_file&#34; chmod &#43;x &#34;$output_ip_file&#34; log &#34;SUCCESS: 10 IPs saved to $output_ip_file&#34; # --- 核心补充：自动上传到 GitHub --- log &#34;Starting GitHub auto-push...&#34; # 强制忽略证书报错（防止 OpenWrt 报错） git config --global http.sslVerify false # 确保只添加这一个文件 git add &#34;$output_ip_file&#34; # 提交更改，附带当前时间 git commit -m &#34;Auto Update IPs: $(date &#39;&#43;%Y-%m-%d %H:%M:%S&#39;)&#34; # 推送到远程 master 分支 # 注意：运行此脚本前必须先执行下方的 git remote set-url 命令 if git push origin master -f; then log &#34;GitHub Sync Success! 🚀&#34; else log &#34;Error: GitHub Push Failed! ❌&#34; fi else log &#34;Error: Could not extract IPs from $csv_file&#34; exit 1 fi下次准备把乌鸦大佬的区域IP拿出来给自己测速使用">
+  <meta property="og:description" content="前提是在盒子中安装好git 和测速软件 https://github.com/XIU2/CloudflareSpeedTest 并且可以把结果推送到tg的bot
+然后使用如下脚本即可测速，并且把IP上传到github 当作cm的优选API 参考cm部署代码 https://github.com/cmliu/edgetunnel">
   <meta property="og:locale" content="zh_CN">
   <meta property="og:type" content="article">
     <meta property="article:section" content="posts">
     <meta property="article:published_time" content="2026-03-07T11:08:09+08:00">
-    <meta property="article:modified_time" content="2026-03-07T11:08:09+08:00">
+    <meta property="article:modified_time" content="2026-03-07T11:16:25+08:00">
     <meta property="og:image" content="https://blog.flyway.us.ci/images/logo.png">
 
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:image" content="https://blog.flyway.us.ci/images/logo.png">
   <meta name="twitter:title" content="使用盒子优选ip并上传到github">
-  <meta name="twitter:description" content="前提是在盒子中安装好git 和测速软件 https://github.com/XIU2/CloudflareSpeedTest
-然后使用如下脚本即可测速，并且把IP上传到github
-#!/bin/bash # 1. 进入工作目录 cd /opt/data/cloudflarespeedtest || { echo &#34;Directory not found&#34;; exit 1; } # 定义日志函数 log() { local message=&#34;$(date &#39;&#43;%Y-%m-%d %H:%M:%S&#39;) - $1&#34; echo &#34;$message&#34; } csv_file=&#34;result.csv&#34; output_ip_file=&#34;youxuanip.txt&#34; log &#34;Start Cloudflare speed test (SL: 3MB, TL: 400ms)...&#34; # --- 修正测速命令：删除重复 -url，保留您的参数 --- ./cfst -url https://cdn.cloudflare.steamstatic.com/steam/apps/256843155/movie_max.mp4 -sl 3 -tl 500 -dn 10 # 检查测速结果 if [ ! -s &#34;$csv_file&#34; ]; then log &#34;Error: Speed test failed, $csv_file is empty.&#34; exit 1 fi log &#34;Test finished. Extracting all 10 best IPs...&#34; # --- 核心修改：提取全部 10 个优选 IP（跳过第一行表头） --- # tail -n &#43;2 表示从第2行开始读取到最后 best_ips=$(tail -n &#43;2 &#34;$csv_file&#34; | cut -d&#39;,&#39; -f1) if [ -n &#34;$best_ips&#34; ]; then # 将所有 IP 写入本地文件（覆盖模式） echo &#34;$best_ips&#34; &gt; &#34;$output_ip_file&#34; chmod &#43;x &#34;$output_ip_file&#34; log &#34;SUCCESS: 10 IPs saved to $output_ip_file&#34; # --- 核心补充：自动上传到 GitHub --- log &#34;Starting GitHub auto-push...&#34; # 强制忽略证书报错（防止 OpenWrt 报错） git config --global http.sslVerify false # 确保只添加这一个文件 git add &#34;$output_ip_file&#34; # 提交更改，附带当前时间 git commit -m &#34;Auto Update IPs: $(date &#39;&#43;%Y-%m-%d %H:%M:%S&#39;)&#34; # 推送到远程 master 分支 # 注意：运行此脚本前必须先执行下方的 git remote set-url 命令 if git push origin master -f; then log &#34;GitHub Sync Success! 🚀&#34; else log &#34;Error: GitHub Push Failed! ❌&#34; fi else log &#34;Error: Could not extract IPs from $csv_file&#34; exit 1 fi下次准备把乌鸦大佬的区域IP拿出来给自己测速使用">
+  <meta name="twitter:description" content="前提是在盒子中安装好git 和测速软件 https://github.com/XIU2/CloudflareSpeedTest 并且可以把结果推送到tg的bot
+然后使用如下脚本即可测速，并且把IP上传到github 当作cm的优选API 参考cm部署代码 https://github.com/cmliu/edgetunnel">
 <meta name="application-name" content="LoveIt">
 <meta name="apple-mobile-web-app-title" content="LoveIt">
 <meta name="referrer" content="no-referrer" /><meta name="theme-color" content="#ffffff"><meta name="msapplication-TileColor" content="#da532c"><link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
@@ -38,8 +36,8 @@
         "mainEntityOfPage": {
             "@type": "WebPage",
             "@id": "https:\/\/blog.flyway.us.ci\/2026030701\/"
-        },"image": ["https:\/\/blog.flyway.us.ci\/images\/Apple-Devices-Preview.png"],"genre": "posts","wordcount":  429 ,
-        "url": "https:\/\/blog.flyway.us.ci\/2026030701\/","datePublished": "2026-03-07T11:08:09+08:00","dateModified": "2026-03-07T11:08:09+08:00","license": "This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.","publisher": {
+        },"image": ["https:\/\/blog.flyway.us.ci\/images\/Apple-Devices-Preview.png"],"genre": "posts","wordcount":  572 ,
+        "url": "https:\/\/blog.flyway.us.ci\/2026030701\/","datePublished": "2026-03-07T11:08:09+08:00","dateModified": "2026-03-07T11:16:25+08:00","license": "This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.","publisher": {
             "@type": "Organization",
             "name": "xxxx","logo": "https:\/\/blog.flyway.us.ci\/images\/avatar.png"},"author": {
                 "@type": "Person",
@@ -129,8 +127,8 @@
             <div class="toc-content" id="toc-content-auto"></div>
         </div><article class="page single"><h1 class="single-title animate__animated animate__flipInX">使用盒子优选ip并上传到github</h1><div class="post-meta">
             <div class="post-meta-line"><span class="post-author"><a href="/" title="Author" rel="author" class="author"><i class="fas fa-user-circle fa-fw" aria-hidden="true"></i>jim</a></span></div>
-            <div class="post-meta-line"><i class="far fa-calendar-alt fa-fw" aria-hidden="true"></i>&nbsp;<time datetime="2026-03-07">2026-03-07</time>&nbsp;<i class="fas fa-pencil-alt fa-fw" aria-hidden="true"></i>&nbsp;约 429 字&nbsp;
-                <i class="far fa-clock fa-fw" aria-hidden="true"></i>&nbsp;预计阅读 1 分钟&nbsp;</div>
+            <div class="post-meta-line"><i class="far fa-calendar-alt fa-fw" aria-hidden="true"></i>&nbsp;<time datetime="2026-03-07">2026-03-07</time>&nbsp;<i class="fas fa-pencil-alt fa-fw" aria-hidden="true"></i>&nbsp;约 572 字&nbsp;
+                <i class="far fa-clock fa-fw" aria-hidden="true"></i>&nbsp;预计阅读 2 分钟&nbsp;</div>
         </div><div class="details toc" id="toc-static"  data-kept="">
                 <div class="details-summary toc-title">
                     <span>目录</span>
@@ -138,8 +136,11 @@
                 </div>
                 <div class="details-content toc-content" id="toc-content-static"><nav id="TableOfContents"></nav></div>
             </div><div class="content" id="content"><p>前提是在盒子中安装好git 和测速软件
-<a href="https://github.com/XIU2/CloudflareSpeedTest" target="_blank" rel="noopener noreffer ">https://github.com/XIU2/CloudflareSpeedTest</a></p>
-<p>然后使用如下脚本即可测速，并且把IP上传到github</p>
+<a href="https://github.com/XIU2/CloudflareSpeedTest" target="_blank" rel="noopener noreffer ">https://github.com/XIU2/CloudflareSpeedTest</a>
+并且可以把结果推送到tg的bot</p>
+<p>然后使用如下脚本即可测速，并且把IP上传到github 当作cm的优选API
+参考cm部署代码
+<a href="https://github.com/cmliu/edgetunnel" target="_blank" rel="noopener noreffer ">https://github.com/cmliu/edgetunnel</a></p>
 <div class="code-block code-line-numbers" style="counter-reset: code-block 0">
     <div class="code-header language-">
         <span class="code-title"><i class="arrow fas fa-angle-right fa-fw" aria-hidden="true"></i></span>
@@ -147,64 +148,121 @@
         <span class="copy" title="复制到剪贴板"><i class="far fa-copy fa-fw" aria-hidden="true"></i></span>
     </div><pre tabindex="0"><code>#!/bin/bash
 
-# 1. 进入工作目录
+# 進入工作目錄
 cd /opt/data/cloudflarespeedtest || { echo &#34;Directory not found&#34;; exit 1; }
 
-# 定义日志函数
-log() {
-    local message=&#34;$(date &#39;+%Y-%m-%d %H:%M:%S&#39;) - $1&#34;
-    echo &#34;$message&#34;
-}
+# -----------------------
+# Telegram 配置
+# -----------------------
+TG_TOKEN=&#34;xxx&#34;
+TG_CHAT_ID=&#34;xxx&#34;
 
+# -----------------------
+# 文件配置
+# -----------------------
 csv_file=&#34;result.csv&#34;
 output_ip_file=&#34;youxuanip.txt&#34;
 
-log &#34;Start Cloudflare speed test (SL: 3MB, TL: 400ms)...&#34;
+# -----------------------
+# 日誌函數
+# -----------------------
+log() {
+    echo &#34;$(date &#39;+%Y-%m-%d %H:%M:%S&#39;) - $1&#34;
+}
 
-# --- 修正测速命令：删除重复 -url，保留您的参数 ---
-./cfst -url https://cdn.cloudflare.steamstatic.com/steam/apps/256843155/movie_max.mp4 -sl 3 -tl 500 -dn 10
+# -----------------------
+# Telegram 推送函數
+# -----------------------
+push_tg() {
+    local message=&#34;$1&#34;
 
-# 检查测速结果
+    curl -s -X POST &#34;https://api.telegram.org/bot${TG_TOKEN}/sendMessage&#34; \
+        -d &#34;chat_id=${TG_CHAT_ID}&#34; \
+        -d &#34;text=${message}&#34; \
+        -d &#34;parse_mode=Markdown&#34; \
+        &gt; /dev/null
+}
+
+# -----------------------
+# 開始測速
+# -----------------------
+log &#34;Start Cloudflare Speed Test...&#34;
+
+./cfst \
+-url https://cdn.cloudflare.steamstatic.com/steam/apps/256843155/movie_max.mp4 \
+-sl 3 \
+-tl 500 \
+-dn 10
+
+# -----------------------
+# 檢查測速結果
+# -----------------------
 if [ ! -s &#34;$csv_file&#34; ]; then
-    log &#34;Error: Speed test failed, $csv_file is empty.&#34;
+    log &#34;Error: $csv_file not generated.&#34;
+    push_tg &#34;❌ *CFST測速失敗*：未生成結果文件&#34;
     exit 1
 fi
 
-log &#34;Test finished. Extracting all 10 best IPs...&#34;
+log &#34;Speed test finished. Extracting Top10 IP...&#34;
 
-# --- 核心修改：提取全部 10 个优选 IP（跳过第一行表头） ---
-# tail -n +2 表示从第2行开始读取到最后
-best_ips=$(tail -n +2 &#34;$csv_file&#34; | cut -d&#39;,&#39; -f1)
+# -----------------------
+# 提取前10個IP
+# -----------------------
+best_ips=$(tail -n +2 &#34;$csv_file&#34; | head -n 10 | cut -d&#39;,&#39; -f1)
 
-if [ -n &#34;$best_ips&#34; ]; then
-    # 将所有 IP 写入本地文件（覆盖模式）
-    echo &#34;$best_ips&#34; &gt; &#34;$output_ip_file&#34;
-	chmod +x &#34;$output_ip_file&#34;
-    log &#34;SUCCESS: 10 IPs saved to $output_ip_file&#34;
-
-    # --- 核心补充：自动上传到 GitHub ---
-    log &#34;Starting GitHub auto-push...&#34;
-    
-    # 强制忽略证书报错（防止 OpenWrt 报错）
-    git config --global http.sslVerify false
-    
-    # 确保只添加这一个文件
-    git add &#34;$output_ip_file&#34;
-    
-    # 提交更改，附带当前时间
-    git commit -m &#34;Auto Update IPs: $(date &#39;+%Y-%m-%d %H:%M:%S&#39;)&#34;
-    
-    # 推送到远程 master 分支
-    # 注意：运行此脚本前必须先执行下方的 git remote set-url 命令
-    if git push origin master -f; then
-        log &#34;GitHub Sync Success! 🚀&#34;
-    else
-        log &#34;Error: GitHub Push Failed! ❌&#34;
-    fi
-else
-    log &#34;Error: Could not extract IPs from $csv_file&#34;
+if [ -z &#34;$best_ips&#34; ]; then
+    log &#34;Error: Cannot extract IP&#34;
+    push_tg &#34;❌ *錯誤*：無法從 CSV 提取 IP&#34;
     exit 1
-fi</code></pre></div>
+fi
+
+# -----------------------
+# 保存IP
+# -----------------------
+echo &#34;$best_ips&#34; &gt; &#34;$output_ip_file&#34;
+
+# 添加標籤,方便clash分类
+sed -i &#39;s/$/#本地韩国/&#39; &#34;$output_ip_file&#34;
+
+log &#34;Top10 IP saved to $output_ip_file&#34;
+
+# -----------------------
+# GitHub 自動推送
+# -----------------------
+log &#34;Start GitHub push...&#34;
+
+git config --global http.sslVerify false
+
+git add &#34;$output_ip_file&#34;
+
+# 防止無變更 commit 失敗
+git commit -m &#34;Auto Update CF IPs: $(date &#39;+%Y-%m-%d %H:%M:%S&#39;)&#34; || true
+
+if git push origin master -f; then
+
+    log &#34;GitHub push success!&#34;
+
+    # 取得前三個IP
+    top_ips=$(head -n 3 &#34;$output_ip_file&#34; | cut -d&#39;#&#39; -f1 | tr &#39;\n&#39; &#39; &#39;)
+
+    tg_msg=&#34;🚀 *CF優選IP更新成功*
+
+📍 標籤: #本地韩国
+🔝 Top3: \`$top_ips\`
+📦 GitHub: 已同步
+⏰ $(date &#39;+%Y-%m-%d %H:%M:%S&#39;)&#34;
+
+    push_tg &#34;$tg_msg&#34;
+
+else
+
+    log &#34;GitHub push failed!&#34;
+
+    push_tg &#34;⚠️ *GitHub推送失敗*，請檢查網絡或權限&#34;
+
+fi
+
+log &#34;Script finished.&#34;</code></pre></div>
 <p>下次准备把乌鸦大佬的区域IP拿出来给自己测速使用</p>
 <p><a href="https://ddx.snu.cc/TW" target="_blank" rel="noopener noreffer ">https://ddx.snu.cc/TW</a></p>
 <p><a href="https://ddx.snu.cc/HK" target="_blank" rel="noopener noreffer ">https://ddx.snu.cc/HK</a></p>
@@ -216,7 +274,8 @@ fi</code></pre></div>
     <div class="post-info">
         <div class="post-info-line">
             <div class="post-info-mod">
-                <span>更新于 2026-03-07</span>
+                <span>更新于 2026-03-07&nbsp;<a class="git-hash" href="https://github.com/flyway666/LoveIt.git/commit/007ccb2e908dd9862e7a1f03915c47fa42383f46" target="_blank" title="commit by flyway666(zj0078@gmail.com) 007ccb2e908dd9862e7a1f03915c47fa42383f46: [介绍，随便写点什么，比如日期]">
+                                    <i class="fas fa-hashtag fa-fw" aria-hidden="true"></i>007ccb2</a></span>
             </div></div>
         <div class="post-info-line">
             <div class="post-info-md"><span>

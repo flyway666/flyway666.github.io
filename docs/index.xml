@@ -12,74 +12,11 @@
     <author>jim</author>
     <guid>https://blog.flyway.us.ci/2026030701/</guid>
     <description><![CDATA[<p>前提是在盒子中安装好git 和测速软件
-<a href="https://github.com/XIU2/CloudflareSpeedTest" target="_blank" rel="noopener noreffer ">https://github.com/XIU2/CloudflareSpeedTest</a></p>
-<p>然后使用如下脚本即可测速，并且把IP上传到github</p>
-<div class="code-block code-line-numbers" style="counter-reset: code-block 0">
-    <div class="code-header language-">
-        <span class="code-title"><i class="arrow fas fa-angle-right fa-fw" aria-hidden="true"></i></span>
-        <span class="ellipses"><i class="fas fa-ellipsis-h fa-fw" aria-hidden="true"></i></span>
-        <span class="copy" title="复制到剪贴板"><i class="far fa-copy fa-fw" aria-hidden="true"></i></span>
-    </div><pre tabindex="0"><code>#!/bin/bash
-
-# 1. 进入工作目录
-cd /opt/data/cloudflarespeedtest || { echo &#34;Directory not found&#34;; exit 1; }
-
-# 定义日志函数
-log() {
-    local message=&#34;$(date &#39;+%Y-%m-%d %H:%M:%S&#39;) - $1&#34;
-    echo &#34;$message&#34;
-}
-
-csv_file=&#34;result.csv&#34;
-output_ip_file=&#34;youxuanip.txt&#34;
-
-log &#34;Start Cloudflare speed test (SL: 3MB, TL: 400ms)...&#34;
-
-# --- 修正测速命令：删除重复 -url，保留您的参数 ---
-./cfst -url https://cdn.cloudflare.steamstatic.com/steam/apps/256843155/movie_max.mp4 -sl 3 -tl 500 -dn 10
-
-# 检查测速结果
-if [ ! -s &#34;$csv_file&#34; ]; then
-    log &#34;Error: Speed test failed, $csv_file is empty.&#34;
-    exit 1
-fi
-
-log &#34;Test finished. Extracting all 10 best IPs...&#34;
-
-# --- 核心修改：提取全部 10 个优选 IP（跳过第一行表头） ---
-# tail -n +2 表示从第2行开始读取到最后
-best_ips=$(tail -n +2 &#34;$csv_file&#34; | cut -d&#39;,&#39; -f1)
-
-if [ -n &#34;$best_ips&#34; ]; then
-    # 将所有 IP 写入本地文件（覆盖模式）
-    echo &#34;$best_ips&#34; &gt; &#34;$output_ip_file&#34;
-	chmod +x &#34;$output_ip_file&#34;
-    log &#34;SUCCESS: 10 IPs saved to $output_ip_file&#34;
-
-    # --- 核心补充：自动上传到 GitHub ---
-    log &#34;Starting GitHub auto-push...&#34;
-    
-    # 强制忽略证书报错（防止 OpenWrt 报错）
-    git config --global http.sslVerify false
-    
-    # 确保只添加这一个文件
-    git add &#34;$output_ip_file&#34;
-    
-    # 提交更改，附带当前时间
-    git commit -m &#34;Auto Update IPs: $(date &#39;+%Y-%m-%d %H:%M:%S&#39;)&#34;
-    
-    # 推送到远程 master 分支
-    # 注意：运行此脚本前必须先执行下方的 git remote set-url 命令
-    if git push origin master -f; then
-        log &#34;GitHub Sync Success! 🚀&#34;
-    else
-        log &#34;Error: GitHub Push Failed! ❌&#34;
-    fi
-else
-    log &#34;Error: Could not extract IPs from $csv_file&#34;
-    exit 1
-fi</code></pre></div>
-<p>下次准备把乌鸦大佬的区域IP拿出来给自己测速使用</p>]]></description>
+<a href="https://github.com/XIU2/CloudflareSpeedTest" target="_blank" rel="noopener noreffer ">https://github.com/XIU2/CloudflareSpeedTest</a>
+并且可以把结果推送到tg的bot</p>
+<p>然后使用如下脚本即可测速，并且把IP上传到github 当作cm的优选API
+参考cm部署代码
+<a href="https://github.com/cmliu/edgetunnel" target="_blank" rel="noopener noreffer ">https://github.com/cmliu/edgetunnel</a></p>]]></description>
 </item>
 <item>
     <title>pg使用触发器记录ddl</title>
